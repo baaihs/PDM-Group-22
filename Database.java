@@ -6,7 +6,7 @@ public class Database {
         String username = "";
         String password = "";
 
-        Connetion con = DriverManager.getConnection(url, username, password);
+        Connection con = DriverManager.getConnection(url, username, password);
         Statement st = con.createStatement();
         String sql = "";
         st.executeQuery(sql);
