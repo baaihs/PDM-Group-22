@@ -8,4 +8,4 @@
 6. Execute in terminal: mvn compile
 7. Execute in terminal: mvn exec:java -Dexec.mainClass="com.example.Database"
 
-(if it says credentials.txt doesn't exists, then try moving it to my-project/credentials.txt)
+(if it says credentials.txt doesn't exist, then try moving it to my-project/credentials.txt)
