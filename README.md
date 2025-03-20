@@ -1,5 +1,5 @@
 # PDM-Group-22
-1. Create credentials.txt. (Will be in location my-project/credentials.txt)
+1. Create credentials.txt in my-project/src/main/java/com/example. (Will be in location my-project/src/main/java/com/example/credentials.txt)
 2. Add lines DB_USER=<YOUR_RIT_USERNAME> and 
              DB_PASSWORD=<YOUR_RIT_PASSWORD>
 3. Download JavaPostgresSSHJars on mycourses(Project -> Additional files)
