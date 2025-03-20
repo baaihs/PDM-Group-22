@@ -19,7 +19,7 @@ public class Database {
         String user = "YOUR_CS_USERNAME"; //change to your username
         String password = "YOUR_CS_PASSWORD"; //change to your password
         String databaseName = "p32001_22"; //change to your database name
-        try (BufferedReader br = new BufferedReader(new FileReader("credentials.txt"))) {
+        try (BufferedReader br = new BufferedReader(new FileReader("my-project/credentials.txt"))) {
             user = br.readLine();
             password = br.readLine();
         } catch (IOException e) {
