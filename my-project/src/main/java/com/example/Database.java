@@ -5,12 +5,13 @@ import com.jcraft.jsch.Session;
 
 import java.util.Properties;
 import java.util.Scanner;
+import java.util.List;
+import java.util.ArrayList;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.*;
-import java.text.SimpleDateFormat;
 
 public class Database {
     private static String username;
@@ -62,16 +63,19 @@ public class Database {
             Scanner scanner = new Scanner(System.in);
             int choice = 0;
             while (choice != 3) {
+                spaces();
                 displayInitialCommands();
+                System.out.print("Enter Choice: ");
                 choice = scanner.nextInt();
-
-                // Check if the user entered a valid choice
+                printLines();
+                
                 while (choice != 1 && choice != 2 && choice != 3) {
-                    System.out.println("Invalid choice. Please enter 1, 2, or 3.");
+                    System.out.println("Invalid Choice (Enter A Number Between 1-3)");
                     choice = scanner.nextInt();
-                    scanner.nextLine(); // Consume newline
+                    scanner.nextLine(); 
                 }
 
+                spaces();
                 if (choice == 1) {
                     createUser();
                 } else if (choice == 2) {
@@ -85,8 +89,8 @@ public class Database {
                     displayAccountCommands();
     
                     accountChoice = scanner.nextInt();
-                    scanner.nextLine(); // Consume newline
-    
+                    scanner.nextLine();
+                    spaces();
                     switch (accountChoice) {
                         case 1:
                             createCollection();
@@ -141,32 +145,13 @@ public class Database {
                             accountChoice = 0;
                             break;
                         default:
-                            System.out.println("Invalid choice. Please enter a number between 1 and 17.");
+                            System.out.println("Invalid Choice (Enter A Number Between 1-17)");
                     }
+                    enterToContinue();
                 }
             }
             
-            scanner.nextLine(); // Consume newline
-
-
-            // while (choice == 1) {
-            //     createUser();
-            //     System.out.println("Choose an option:");
-            //     System.out.println("1. Create an account");
-            //     System.out.println("2. Log into an existing account");
-            //     choice = scanner.nextInt();
-
-                // if (choice == 1) {
-                //     createUser();
-                // } else if (choice == 2) {
-                //     accessAccount();
-                // } else {
-                //     System.out.println("Invalid choice. Exiting.");
-                // }
-            // }
-
-
-
+            scanner.nextLine();
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -184,20 +169,20 @@ public class Database {
     // Function to create a new user account
     public static void createUser() {
         try {
-            System.out.println("Enter username:");
+            System.out.print("Enter Username: ");
             String inputtedUsername = scanner.nextLine();
-            System.out.println("Enter password:");
+            System.out.print("Enter Password: ");
             String password = scanner.nextLine();
-            System.out.println("Enter first name:");
+            System.out.print("Enter First Name: ");
             String firstName = scanner.nextLine();
-            System.out.println("Enter last name:");
+            System.out.print("Enter Last Name: ");
             String lastName = scanner.nextLine();
-            System.out.println("Enter gender (Male/Female):");
+            System.out.print("Enter Gender (Male/Female): ");
             String gender = scanner.nextLine();
-            System.out.println("Enter date of birth (YYYY-MM-DD):");
+            System.out.print("Enter Date of Birth (YYYY-MM-DD): ");
             String dobString = scanner.nextLine();
             Date dob = Date.valueOf(dobString);
-            System.out.println("Enter biography:");
+            System.out.print("Enter Biography: ");
             String biography = scanner.nextLine();
             Date currentDate = new Date(System.currentTimeMillis());
             
@@ -215,19 +200,18 @@ public class Database {
                 pstmt.setDate(8, currentDate);
                 pstmt.setDate(9, currentDate);
                 pstmt.executeUpdate();
-                System.out.println("Account created successfully.");
+                System.out.println("\nACCOUNT CREATED SUCCESSFULLY");
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    // Function to log into an existing user account
     public static void accessAccount() {
         try {
-            System.out.println("Enter username:");
+            System.out.print("Enter Username: ");
             String usernameInput = scanner.nextLine();
-            System.out.println("Enter password:");
+            System.out.print("Enter Password: ");
             String password = scanner.nextLine();
 
             String sql = "SELECT * FROM users WHERE username = ? AND password = ?";
@@ -235,24 +219,32 @@ public class Database {
                 pstmt.setString(1, usernameInput);
                 pstmt.setString(2, password);
                 try (ResultSet rs = pstmt.executeQuery()) {
+                    System.out.println();
                     if (rs.next()) {
                         username = usernameInput;
-                        System.out.println("Login successful. Welcome, " + username + "!");
+                        System.out.println("Login Successful. Welcome, " + username + "!");
                     } else {
-                        System.out.println("Invalid username or password.");
+                        System.out.println("Invalid Username/Password.");
                     }
                 }
             }
+
+            String sqlUpdate = "UPDATE users SET last_access_date = ? WHERE username = ?";
+            try (PreparedStatement pstmt = conn.prepareStatement(sqlUpdate)) {
+                pstmt.setDate(1, new Date(System.currentTimeMillis()));
+                pstmt.setString(2, username);
+                pstmt.executeUpdate();
+            }
+
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
     public static void createCollection() {
-        // ADD CHECK TO NOT CREATE A COLLECTION WITH A NAME THAT ALREADY EXISTS
-
-
-        System.out.println("Enter the name of the collection:");
+        printLines();
+        System.out.print("Enter Collection Name: ");
         String collectionName = scanner.nextLine();
         String findIdSql = "SELECT collection_id FROM collection ORDER BY collection_id";
         int newId = 1;
@@ -276,21 +268,27 @@ public class Database {
             pstmt.setString(3, collectionName);
             pstmt.setInt(4, 0);
             pstmt.executeUpdate();
-            System.out.println("Collection created successfully.");
+            System.out.println("\nCOLLECTION CREATED SUCCESSFULLY");
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
-
+    
     public static void seeCollection() {
-        String sql = "SELECT collection_name, quantity FROM collection WHERE owner_username = ?";
+        String sql = "SELECT collection.collection_name, collection.quantity, SUM(movie.length) AS total_length FROM collection " + 
+                     "INNER JOIN consists_of " + 
+                     "ON collection.collection_id = consists_of.collection_id " +
+                     "INNER JOIN movie " +
+                     "ON consists_of.movie_id = movie.movie_id " +
+                     "WHERE collection.owner_username = ? " +
+                     "GROUP BY collection.collection_id, collection.collection_name, collection.quantity";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, username);
             try (ResultSet rs = pstmt.executeQuery()) {
-                System.out.printf("%-30s %-10s%n", "Collection Name", "Quantity");
-                System.out.println("-------------------------------------------------");
+                System.out.printf("%-30s %-10s %-10s%n", "Collection Name", "Quantity", "Total Length");
+                System.out.println("--------------------------------------------------------------");
                 while (rs.next()) {
-                    System.out.printf("%-30s %-10d%n", rs.getString("collection_name"), rs.getInt("quantity"));
+                    System.out.printf("%-30s %-10s %-10s%n", rs.getString("collection_name"), rs.getInt("quantity"), rs.getTime("total_length"));
                 }
             }
         } catch (SQLException e) {
@@ -299,7 +297,7 @@ public class Database {
     }
 
     public static void searchMovieByName() {
-        System.out.println("Enter the name of the movie:");
+        System.out.print("Enter Movie Name: ");
         String movieName = scanner.nextLine();
         String sql = "SELECT movie.title, cast_member.first_name AS cast_first, cast_member.last_name AS cast_last, director.first_name AS director_first, director.last_name AS director_last, movie.length, movie.mpaa_rating, rates.rating AS rate " +
                      "FROM movie " +
@@ -311,9 +309,9 @@ public class Database {
                      "ON movie.movie_id = directed_by.movie_id " +
                      "INNER JOIN director " +
                      "ON directed_by.director_id = director.director_id " +
-                     "INNER JOIN rates " +
+                     "LEFT JOIN rates " +
                      "ON movie.movie_id = rates.movie_id " +
-                     "WHERE rates.username = ? AND ra.title = ?";
+                     "WHERE rates.username = ? AND movie.title = ?";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, username);
             pstmt.setString(2, movieName);
@@ -330,9 +328,10 @@ public class Database {
     }
 
     public static void searchMovieByReleaseDate() {
-        System.out.println("Enter the name of the release date:");
-        String release_date = scanner.nextLine();
-        String sql = "SELECT movie.title, cast_member.first_name AS cast_first, cast_member.last_name AS cast_last, director.first_name AS director_first, director.last_name AS director_last, movie.length, movie.mpaa_rating, rates.rating AS rate " +
+        System.out.print("Enter Release Date: ");
+        String release_date_string = scanner.nextLine();
+        Date release_date = Date.valueOf(release_date_string);
+        String sql1 = "SELECT movie.title, cast_member.first_name AS cast_first, cast_member.last_name AS cast_last, director.first_name AS director_first, director.last_name AS director_last, movie.length, movie.mpaa_rating, rates.rating AS rate " +
                      "FROM movie " +
                      "INNER JOIN casts " + 
                      "ON movie.movie_id = casts.movie_id " + 
@@ -342,19 +341,20 @@ public class Database {
                      "ON movie.movie_id = directed_by.movie_id " +
                      "INNER JOIN director " +
                      "ON directed_by.director_id = director.director_id " +
-                     "INNER JOIN rates " +
+                     "LEFT JOIN rates " +
                      "ON movie.movie_id = rates.movie_id " +
                      "INNER JOIN released_on " +
                      "ON movie.movie_id = released_on.movie_id " +
-                     "WHERE rates.username = ? AND released_date = ?";
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, username);
-            pstmt.setString(2, release_date);
+                     "WHERE released_on.release_date = ? ";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql1)) {
+            pstmt.setDate(1, release_date);
             try (ResultSet rs = pstmt.executeQuery()) {
                 System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", "title", "cast_first", "cast_last", "director_first", "director_last", "length", "mpaa_rating", "rating");
                 System.out.println("----------------------------------------------------------------------------------------------------------");
                 while (rs.next()) {
-                    System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", rs.getString("title"), rs.getString("cast_first"), rs.getString("cast_last"), rs.getString("director_first"), rs.getString("director_last"), rs.getTime("length"), rs.getString("mpaa_rating"), rs.getDouble("rate"));
+                    BigDecimal ratingBD = (BigDecimal) rs.getObject("rate");
+                    Double rating = (ratingBD != null) ? ratingBD.doubleValue() : null;
+                    System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", rs.getString("title"), rs.getString("cast_first"), rs.getString("cast_last"), rs.getString("director_first"), rs.getString("director_last"), rs.getTime("length"), rs.getString("mpaa_rating"), (rating != null ? rating.toString() : "NULL"));
                 }
             }
         } catch (SQLException e) {
@@ -363,9 +363,11 @@ public class Database {
     }
 
     public static void searchMovieByCast() {
-        System.out.println("Enter the name of the cast member:");
-        String genre = scanner.nextLine();
-        String sql = "SELECT movie.title, cast_member.first_name AS cast_first, cast_member.last_name AS cast_last, director.first_name AS director_first, director.last_name AS director_last, movie.length, movie.mpaa_rating, rates.rating AS rate " +
+        System.out.print("Enter Cast Member Name: ");
+        String castName = scanner.nextLine();
+        String first = castName.split(" ")[0];
+        String last = castName.split(" ")[1];
+        String sql = "SELECT movie.title, cast_member.first_name AS cast_first, cast_member.last_name AS cast_last, director.first_name AS director_first, director.last_name AS director_last, movie.length, movie.mpaa_rating, rates.rating AS rate  " +
                      "FROM movie " +
                      "INNER JOIN casts " + 
                      "ON movie.movie_id = casts.movie_id " + 
@@ -375,6 +377,8 @@ public class Database {
                      "ON movie.movie_id = directed_by.movie_id " +
                      "INNER JOIN director " +
                      "ON directed_by.director_id = director.director_id " +
+                     "LEFT JOIN rates " +
+                     "ON movie.movie_id = rates.movie_id " +
                      "INNER JOIN casts " +
                      "ON movie.movie_id = casts.movie_id " +
                      "INNER JOIN cast_member " + 
@@ -382,7 +386,8 @@ public class Database {
                      "WHERE rates.username = ? AND cast_member.first_name = ? AND cast_member.last_name = ?";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, username);
-            pstmt.setString(2, genre);
+            pstmt.setString(2, first);
+            pstmt.setString(3, last);
             try (ResultSet rs = pstmt.executeQuery()) {
                 System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", "title", "cast_first", "cast_last", "director_first", "director_last", "length", "mpaa_rating", "rating");
                 System.out.println("----------------------------------------------------------------------------------------------------------");
@@ -396,7 +401,7 @@ public class Database {
     }
 
     public static void searchMovieByStudio() {
-        System.out.println("Enter the name of the studio:");
+        System.out.print("Enter Studio Name: ");
         String studio = scanner.nextLine();
         String sql = "SELECT movie.title, cast_member.first_name AS cast_first, cast_member.last_name AS cast_last, director.first_name AS director_first, director.last_name AS director_last, movie.length, movie.mpaa_rating, rates.rating AS rate " +
                      "FROM movie " +
@@ -408,7 +413,7 @@ public class Database {
                      "ON movie.movie_id = directed_by.movie_id " +
                      "INNER JOIN director " +
                      "ON directed_by.director_id = director.director_id " +
-                     "INNER JOIN rates " +
+                     "LEFT JOIN rates " +
                      "ON movie.movie_id = rates.movie_id " +
                      "INNER JOIN studio " +
                      "ON movie.studio_id = studio.studio_id " +
@@ -428,8 +433,8 @@ public class Database {
         }
     }
 
-public static void searchMovieByGenre() {
-        System.out.println("Enter the genre of the movie:");
+    public static void searchMovieByGenre() {
+        System.out.print("Enter Movie Genre: ");
         String genre = scanner.nextLine();
         String sql = "SELECT movie.title, cast_member.first_name AS cast_first, cast_member.last_name AS cast_last, director.first_name AS director_first, director.last_name AS director_last, movie.length, movie.mpaa_rating, rates.rating AS rate " +
                      "FROM movie " +
@@ -441,6 +446,8 @@ public static void searchMovieByGenre() {
                      "ON movie.movie_id = directed_by.movie_id " +
                      "INNER JOIN director " +
                      "ON directed_by.director_id = director.director_id " +
+                     "LEFT JOIN rates " +
+                     "ON movie.movie_id = rates.movie_id " +
                      "INNER JOIN has_genre " +
                      "ON movie.movie_id = has_genre.movie_id " +
                      "INNER JOIN genre " + 
@@ -463,45 +470,125 @@ public static void searchMovieByGenre() {
 
 
     public static void addMovies() {
-        String searchSql = "SELECT collection.name FROM collection " +
-                           "WHERE owner_username = " + username;
-        // try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-        //     pstmt.setString(1, username);
-        //     pstmt.setString(2, genre);
-        //     try (ResultSet rs = pstmt.executeQuery()) {
-        //         System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", "title", "cast_first", "cast_last", "director_first", "director_last", "length", "mpaa_rating", "rating");
-        //         System.out.println("----------------------------------------------------------------------------------------------------------");
-        //         while (rs.next()) {
-        //             System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", rs.getString("title"), rs.getString("cast_first"), rs.getString("cast_last"), rs.getString("director_first"), rs.getString("director_last"), rs.getTime("length"), rs.getString("mpaa_rating"), rs.getDouble("rate"));
-        //         }
-        //     }
-        // } catch (SQLException e) {
-        //     e.printStackTrace();
-        // }
+        int collectionID = 0;
+        int movieID = 0;
+
+        String searchSql = "SELECT collection.collection_id, collection.collection_name, collection.quantity " +
+                           "FROM collection " +
+                           "WHERE owner_username = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(searchSql)) {
+            pstmt.setString(1, username);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                System.out.println("Your collections: ");
+                System.out.println("-----------------");
+                while(rs.next()) {
+                    System.out.print(rs.getString("collection_name") + ", ");
+                }
+                System.out.println();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
         System.out.println("Enter the name of the collection you want to add the movie to:");
-        String collection = scanner.nextLine();
+        String collectionName = scanner.nextLine();
         System.out.println("Enter the name of the movie you want to add:");
         String movie = scanner.nextLine();
-        String sql = "INSERT INTO collection (owner_usernamee, collection_name, quantity) " + ""
-                     ;
 
-        // try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-        //     pstmt.setString(1, collection);
-        //     pstmt.setString(2, movie);
-        //     try (ResultSet rs = pstmt.executeQuery()) {
-        //         System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", "title", "cast_first", "cast_last", "director_first", "director_last", "length", "mpaa_rating", "rating");
-        //         System.out.println("----------------------------------------------------------------------------------------------------------");
-        //         while (rs.next()) {
-        //             System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", rs.getString("title"), rs.getString("cast_first"), rs.getString("cast_last"), rs.getString("director_first"), rs.getString("director_last"), rs.getTime("length"), rs.getString("mpaa_rating"), rs.getDouble("rate"));
-        //         }
-        //     }
-        // } catch (SQLException e) {
-        //     e.printStackTrace();
-        // }
+        String findMovieSQL = "SELECT movie.movie_id " +
+                     "FROM movie " +
+                     "WHERE title = ?";
+         try (PreparedStatement pstmt = conn.prepareStatement(findMovieSQL)) {
+            pstmt.setString(1, movie);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                rs.next();
+                movieID = rs.getInt("movie_id");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        String findCollectionSQL = "SELECT collection_id " +
+                     "FROM collection  " +
+                     "WHERE owner_username = ? AND collection_name = ?";
+         try (PreparedStatement pstmt = conn.prepareStatement(findCollectionSQL)) {
+            pstmt.setString(1, username);
+            pstmt.setString(2, collectionName);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                rs.next();
+                collectionID = rs.getInt("collection_id");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        String insertSQL = "UPDATE collection " + 
+                     "SET quantity = quantity + 1 " +
+                     "WHERE collection_id = ? AND owner_username = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
+            pstmt.setInt(1, collectionID);
+            pstmt.setString(2, username);
+            pstmt.executeUpdate();
+            System.out.println("Collection updated successfully");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        String insertSQL2 = "INSERT INTO consists_of (collection_id, owner_username, movie_id)" +
+                     "VALUES (?, ?, ?)";
+        try (PreparedStatement pstmt = conn.prepareStatement(insertSQL2)) {
+            pstmt.setInt(1, collectionID);
+            pstmt.setString(2, username);
+            pstmt.setInt(3, movieID);
+            pstmt.executeUpdate();
+            System.out.println("Movie added to " + collectionName + " successfully.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public static void removeMovies() {
-
+        System.out.println("Enter the name of the collection you want to delete a movie from:");
+        String collectionName = scanner.nextLine();
+        System.out.println("Enter the name of the movie you want to delete:");
+        String movieName = scanner.nextLine();
+        int collectionID = -1;
+        int movieID = -1;
+        String sql = "SELECT collection_id FROM collection WHERE collection_name = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, collectionName);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    collectionID = rs.getInt("collection_id");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return;
+        }
+        String movieSql = "SELECT movie_id FROM movies WHERE title = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(movieSql)) {
+            pstmt.setString(1, movieName);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    movieID = rs.getInt("movie_id");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return;
+        }
+        String deleteSql = "DELETE FROM collection_name WHERE movie_id = ? AND collection_id = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(deleteSql)) {
+            pstmt.setInt(1, movieID);
+            pstmt.setInt(2, collectionID);
+            int rowsDeleted = pstmt.executeUpdate();
+            if (rowsDeleted > 0) {
+                System.out.println("Movie '" + movieName + "' deleted successfully from collection '" + collectionName + "'.");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public static void modifyCollectionName() {
@@ -574,6 +661,7 @@ public static void searchMovieByGenre() {
         }   
         catch (SQLException e) {
             e.printStackTrace();
+            return;
         }
 
         sql = "INSERT INTO rates (username, movie_id, recommend, rating)" +
@@ -593,24 +681,126 @@ public static void searchMovieByGenre() {
 
     public static void watchMovie() {
         System.out.println("Enter the name of the movie you want to watch:");
-        String movieName = "";
+        String movieName = scanner.nextLine();
         int movieID = -1;
-        String sql = "SELECT movie_id FROM movie WHERE title = ?";
+        Time movieLength = null;
+        
+        // Get the movie ID
+        String sql = "SELECT movie_id, length FROM movie where title = ?";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, movieName);
             try (ResultSet rs = pstmt.executeQuery()) {
-                rs.next();
-                movieID = rs.getInt("movie_id");
+                if (rs.next()) {
+                    movieID = rs.getInt("movie_id");
+                    movieLength = rs.getTime("length");
+                } else {
+                    System.out.println("Movie not found.");
+                    return;
+                }
             }
-            sql = "INSERT ";
-        }   
-        catch (SQLException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
+            return;
+        }
+        
+        // Insert into watched
+        Timestamp startTime = new Timestamp(System.currentTimeMillis());
+        int hours = movieLength.toLocalTime().getHour();
+        int minutes = movieLength.toLocalTime().getMinute();
+        int seconds = movieLength.toLocalTime().getSecond();
+        long movieLengthMillis = (hours * 3600 + minutes * 60 + seconds) * 1000L;
+        Timestamp endTime = new Timestamp(startTime.getTime() + movieLengthMillis);
+        String insertSql = "INSERT INTO watches (username, movie_id, start_time, end_time) " +
+                           "VALUES (?, ?, ?, ?)";
+        try (PreparedStatement pstmt = conn.prepareStatement(insertSql)) {
+            pstmt.setString(1, username);
+            pstmt.setInt(2, movieID);
+            pstmt.setTimestamp(3, startTime);
+            pstmt.setTimestamp(4, endTime);
+            pstmt.executeUpdate();
+            System.out.println("Movie watched successfully.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return;
         }
     }
 
     public static void watchCollection() {
+        String searchSql = "SELECT collection.collection_id, collection.collection_name, collection.quantity " +
+                           "FROM collection " +
+                           "WHERE owner_username = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(searchSql)) {
+            pstmt.setString(1, username);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                System.out.println("Your collections: ");
+                System.out.println("-----------------");
+                while(rs.next()) {
+                    System.out.print(rs.getString("collection_name") + ", ");
+                }
+                System.out.println();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return;
+        }
+        
+        System.out.println("Enter the name of the collection you want to watch:");
+        String collectionName = scanner.nextLine();
+        int collectionID = -1;
+        String sql = "SELECT collection_id FROM collection WHERE collection_name = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, collectionName);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                rs.next();
+                collectionID = rs.getInt("collection_id");
+            }
+        }   
+        catch (SQLException e) {
+            e.printStackTrace();
+            return;
+        }
 
+        ArrayList<Integer> movieArray = new ArrayList<Integer>();
+        ArrayList<Time> movieLengthArray = new ArrayList<Time>();
+        String getMoviesSQL = "SELECT movie_id, length " +
+                     "FROM consists_of " +
+                     "WHERE collection_id = ? AND owner_username = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(getMoviesSQL)) {
+            pstmt.setInt(1, collectionID);
+            pstmt.setString(2, username);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while(rs.next()) {
+                    movieArray.add(rs.getInt("movie_id"));
+                    movieLengthArray.add(rs.getTime("length"));
+                }
+                System.out.println(movieArray.size() + " movies set to watched in collection: " + collectionName);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        for(int i = 0; i < movieArray.size(); i++){
+            String insertSQL = "INSERT INTO watches (username, movie_id, start_time, end_time) " +
+                     "VALUES (?, ?, ?, ?)";
+            try (PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
+                Timestamp startTime = new Timestamp(System.currentTimeMillis());
+                int hours = movieLengthArray.get(i).toLocalTime().getHour();
+                int minutes = movieLengthArray.get(i).toLocalTime().getMinute();
+                int seconds = movieLengthArray.get(i).toLocalTime().getSecond();
+                long movieLengthMillis = (hours * 3600 + minutes * 60 + seconds) * 1000L;
+                Timestamp endTime = new Timestamp(startTime.getTime() + movieLengthMillis);
+                pstmt.setString(1, username);
+                pstmt.setInt(2, movieArray.get(i));
+                pstmt.setTimestamp(3, startTime);
+                pstmt.setTimestamp(4, endTime);
+                pstmt.executeUpdate();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                return;
+            }
+        }
+        System.out.println("Collection watched successfully.");
     }
 
     public static void followUser() {
@@ -632,7 +822,7 @@ public static void searchMovieByGenre() {
     public static void unfollowUser() {
         System.out.println("Enter the username of the user you want to unfollow");
         String userToUnfollow = scanner.nextLine();
-        String sql = "DELETE FROM * WHERE follower = ? AND followee = ?";
+        String sql = "DELETE FROM follows WHERE follower = ? AND followee = ?";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, username);
             pstmt.setString(2, userToUnfollow);
@@ -645,29 +835,50 @@ public static void searchMovieByGenre() {
     }
 
     public static void displayInitialCommands() {
-        System.out.println("Choose an option:");
-        System.out.println("1. Create an account");
-        System.out.println("2. Log into an existing account");
+        printLines();
+        System.out.println("Choose An Option:");
+        System.out.println("1. Create Account");
+        System.out.println("2. Login");
         System.out.println("3. Exit");
+        printLines();
     }
 
     public static void displayAccountCommands() {
-        System.out.println("1. Create a collection");
-        System.out.println("2. See collection");
-        System.out.println("3. Search for a movie by name");
-        System.out.println("4. Search for a movie by release date");
-        System.out.println("5. Search for a movie by cast");
-        System.out.println("6. Search for a movie by studio");
-        System.out.println("7. Search for a movie by genre");
-        System.out.println("8. Add movies to a collection");
-        System.out.println("9. Remove movies from a collection");
-        System.out.println("10. Modify collection name");
-        System.out.println("11. Delete collection");
-        System.out.println("12. Rate a movie");
-        System.out.println("13. Watch a movie");
-        System.out.println("14. Watch a collection");
-        System.out.println("15. Follow a user");
-        System.out.println("16. Unfollow a user");
+        spaces();
+        printLines();
+        System.out.println("1. Create Collection");
+        System.out.println("2. See Collection");
+        System.out.println("3. Search Movie by Name");
+        System.out.println("4. Search Movie by Release Date");
+        System.out.println("5. Search Movie by Cast");
+        System.out.println("6. Search Movie by Studio");
+        System.out.println("7. Search Movie by Genre");
+        System.out.println("8. Add Movie to Collection");
+        System.out.println("9. Remove Movie from Collection");
+        System.out.println("10. Modify Collection Name");
+        System.out.println("11. Delete Collection");
+        System.out.println("12. Rate Movie");
+        System.out.println("13. Watch Movie");
+        System.out.println("14. Watch Collection");
+        System.out.println("15. Follow User");
+        System.out.println("16. Unfollow User");
         System.out.println("17. Exit");
+        printLines();
+        System.out.print("Enter Choice: ");
+    }
+
+    public static void printLines() {
+        System.out.println("-----------------------------------------");
+    }
+
+    public static void enterToContinue() {
+        System.out.print("\nPress Enter To Continue... ");
+        scanner.nextLine();
+    }
+
+    public static void spaces() {
+        for (int i = 0; i < 50; i++) {
+            System.out.println();
+        }
     }
 }
