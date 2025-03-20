@@ -482,7 +482,7 @@ public static void searchMovieByGenre() {
         String collection = scanner.nextLine();
         System.out.println("Enter the name of the movie you want to add:");
         String movie = scanner.nextLine();
-        String sql = "INSERT INTO collection (owner_usernamee, collection_name, quantity) " +
+        String sql = "INSERT INTO collection (owner_usernamee, collection_name, quantity) " + ""
                      ;
 
         // try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -643,6 +643,16 @@ public static void searchMovieByGenre() {
             e.printStackTrace();
         } 
     }
+
+    public static void displayInitialCommands() {
+        System.out.println("Choose an option:");
+        System.out.println("1. Create an account");
+        System.out.println("2. Log into an existing account");
+        System.out.println("3. Exit");
+    }
+
+    public static void displayAccountCommands() {
+        System.out.println("1. Create a collection");
         System.out.println("2. See collection");
         System.out.println("3. Search for a movie by name");
         System.out.println("4. Search for a movie by release date");
