@@ -116,7 +116,7 @@ public class Database {
                             removeMovies();
                             break;
                         case 10:
-                            modifyColletionName();
+                            modifyCollectionName();
                             break;
                         case 11:
                             deleteCollection();
@@ -313,7 +313,7 @@ public class Database {
                      "ON directed_by.director_id = director.director_id " +
                      "INNER JOIN rates " +
                      "ON movie.movie_id = rates.movie_id " +
-                     "WHERE rates.username = ? AND movie.title = ?";
+                     "WHERE rates.username = ? AND ra.title = ?";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, username);
             pstmt.setString(2, movieName);
@@ -330,31 +330,194 @@ public class Database {
     }
 
     public static void searchMovieByReleaseDate() {
-
+        System.out.println("Enter the name of the release date:");
+        String release_date = scanner.nextLine();
+        String sql = "SELECT movie.title, cast_member.first_name AS cast_first, cast_member.last_name AS cast_last, director.first_name AS director_first, director.last_name AS director_last, movie.length, movie.mpaa_rating, rates.rating AS rate " +
+                     "FROM movie " +
+                     "INNER JOIN casts " + 
+                     "ON movie.movie_id = casts.movie_id " + 
+                     "INNER JOIN cast_member " +
+                     "ON casts.member_id = cast_member.member_id " +
+                     "INNER JOIN directed_by " +
+                     "ON movie.movie_id = directed_by.movie_id " +
+                     "INNER JOIN director " +
+                     "ON directed_by.director_id = director.director_id " +
+                     "INNER JOIN rates " +
+                     "ON movie.movie_id = rates.movie_id " +
+                     "INNER JOIN released_on " +
+                     "ON movie.movie_id = released_on.movie_id " +
+                     "WHERE rates.username = ? AND released_date = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            pstmt.setString(2, release_date);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", "title", "cast_first", "cast_last", "director_first", "director_last", "length", "mpaa_rating", "rating");
+                System.out.println("----------------------------------------------------------------------------------------------------------");
+                while (rs.next()) {
+                    System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", rs.getString("title"), rs.getString("cast_first"), rs.getString("cast_last"), rs.getString("director_first"), rs.getString("director_last"), rs.getTime("length"), rs.getString("mpaa_rating"), rs.getDouble("rate"));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public static void searchMovieByCast() {
-
+        System.out.println("Enter the name of the cast member:");
+        String genre = scanner.nextLine();
+        String sql = "SELECT movie.title, cast_member.first_name AS cast_first, cast_member.last_name AS cast_last, director.first_name AS director_first, director.last_name AS director_last, movie.length, movie.mpaa_rating, rates.rating AS rate " +
+                     "FROM movie " +
+                     "INNER JOIN casts " + 
+                     "ON movie.movie_id = casts.movie_id " + 
+                     "INNER JOIN cast_member " +
+                     "ON casts.member_id = cast_member.member_id " +
+                     "INNER JOIN directed_by " +
+                     "ON movie.movie_id = directed_by.movie_id " +
+                     "INNER JOIN director " +
+                     "ON directed_by.director_id = director.director_id " +
+                     "INNER JOIN casts " +
+                     "ON movie.movie_id = casts.movie_id " +
+                     "INNER JOIN cast_member " + 
+                     "ON casts.genre_id = cast_member.genre_id " +
+                     "WHERE rates.username = ? AND cast_member.first_name = ? AND cast_member.last_name = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            pstmt.setString(2, genre);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", "title", "cast_first", "cast_last", "director_first", "director_last", "length", "mpaa_rating", "rating");
+                System.out.println("----------------------------------------------------------------------------------------------------------");
+                while (rs.next()) {
+                    System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", rs.getString("title"), rs.getString("cast_first"), rs.getString("cast_last"), rs.getString("director_first"), rs.getString("director_last"), rs.getTime("length"), rs.getString("mpaa_rating"), rs.getDouble("rate"));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public static void searchMovieByStudio() {
-
+        System.out.println("Enter the name of the studio:");
+        String studio = scanner.nextLine();
+        String sql = "SELECT movie.title, cast_member.first_name AS cast_first, cast_member.last_name AS cast_last, director.first_name AS director_first, director.last_name AS director_last, movie.length, movie.mpaa_rating, rates.rating AS rate " +
+                     "FROM movie " +
+                     "INNER JOIN casts " + 
+                     "ON movie.movie_id = casts.movie_id " + 
+                     "INNER JOIN cast_member " +
+                     "ON casts.member_id = cast_member.member_id " +
+                     "INNER JOIN directed_by " +
+                     "ON movie.movie_id = directed_by.movie_id " +
+                     "INNER JOIN director " +
+                     "ON directed_by.director_id = director.director_id " +
+                     "INNER JOIN rates " +
+                     "ON movie.movie_id = rates.movie_id " +
+                     "INNER JOIN studio " +
+                     "ON movie.studio_id = studio.studio_id " +
+                     "WHERE rates.username = ? AND studio.name = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            pstmt.setString(2, studio);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", "title", "cast_first", "cast_last", "director_first", "director_last", "length", "mpaa_rating", "rating");
+                System.out.println("----------------------------------------------------------------------------------------------------------");
+                while (rs.next()) {
+                    System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", rs.getString("title"), rs.getString("cast_first"), rs.getString("cast_last"), rs.getString("director_first"), rs.getString("director_last"), rs.getTime("length"), rs.getString("mpaa_rating"), rs.getDouble("rate"));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
-    public static void searchMovieByGenre() {
-
+public static void searchMovieByGenre() {
+        System.out.println("Enter the genre of the movie:");
+        String genre = scanner.nextLine();
+        String sql = "SELECT movie.title, cast_member.first_name AS cast_first, cast_member.last_name AS cast_last, director.first_name AS director_first, director.last_name AS director_last, movie.length, movie.mpaa_rating, rates.rating AS rate " +
+                     "FROM movie " +
+                     "INNER JOIN casts " + 
+                     "ON movie.movie_id = casts.movie_id " + 
+                     "INNER JOIN cast_member " +
+                     "ON casts.member_id = cast_member.member_id " +
+                     "INNER JOIN directed_by " +
+                     "ON movie.movie_id = directed_by.movie_id " +
+                     "INNER JOIN director " +
+                     "ON directed_by.director_id = director.director_id " +
+                     "INNER JOIN has_genre " +
+                     "ON movie.movie_id = has_genre.movie_id " +
+                     "INNER JOIN genre " + 
+                     "ON has_genre.genre_id = genre.genre_id " +
+                     "WHERE rates.username = ? AND genre.genre_name = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            pstmt.setString(2, genre);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", "title", "cast_first", "cast_last", "director_first", "director_last", "length", "mpaa_rating", "rating");
+                System.out.println("----------------------------------------------------------------------------------------------------------");
+                while (rs.next()) {
+                    System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", rs.getString("title"), rs.getString("cast_first"), rs.getString("cast_last"), rs.getString("director_first"), rs.getString("director_last"), rs.getTime("length"), rs.getString("mpaa_rating"), rs.getDouble("rate"));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
+
 
     public static void addMovies() {
+        String searchSql = "SELECT collection.name FROM collection " +
+                           "WHERE owner_username = " + username;
+        // try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        //     pstmt.setString(1, username);
+        //     pstmt.setString(2, genre);
+        //     try (ResultSet rs = pstmt.executeQuery()) {
+        //         System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", "title", "cast_first", "cast_last", "director_first", "director_last", "length", "mpaa_rating", "rating");
+        //         System.out.println("----------------------------------------------------------------------------------------------------------");
+        //         while (rs.next()) {
+        //             System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", rs.getString("title"), rs.getString("cast_first"), rs.getString("cast_last"), rs.getString("director_first"), rs.getString("director_last"), rs.getTime("length"), rs.getString("mpaa_rating"), rs.getDouble("rate"));
+        //         }
+        //     }
+        // } catch (SQLException e) {
+        //     e.printStackTrace();
+        // }
+        System.out.println("Enter the name of the collection you want to add the movie to:");
+        String collection = scanner.nextLine();
+        System.out.println("Enter the name of the movie you want to add:");
+        String movie = scanner.nextLine();
+        String sql = "INSERT INTO collection (owner_usernamee, collection_name, quantity) " +
+                     ;
 
+        // try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        //     pstmt.setString(1, collection);
+        //     pstmt.setString(2, movie);
+        //     try (ResultSet rs = pstmt.executeQuery()) {
+        //         System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", "title", "cast_first", "cast_last", "director_first", "director_last", "length", "mpaa_rating", "rating");
+        //         System.out.println("----------------------------------------------------------------------------------------------------------");
+        //         while (rs.next()) {
+        //             System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", rs.getString("title"), rs.getString("cast_first"), rs.getString("cast_last"), rs.getString("director_first"), rs.getString("director_last"), rs.getTime("length"), rs.getString("mpaa_rating"), rs.getDouble("rate"));
+        //         }
+        //     }
+        // } catch (SQLException e) {
+        //     e.printStackTrace();
+        // }
     }
 
     public static void removeMovies() {
 
     }
 
-    public static void modifyColletionName() {
-
+    public static void modifyCollectionName() {
+        System.out.println("Enter the name of the collection you want to modify:");
+        String collectionName = scanner.nextLine();
+        System.out.println("Enter the new name of the collection:");
+        String newCollectionName = scanner.nextLine();
+        String sql = "UPDATE collection SET collection_name = ? WHERE collection_name = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, newCollectionName);
+            pstmt.setString(2, collectionName);
+            pstmt.executeUpdate();
+            System.out.println("Collection updated successfully.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public static void deleteCollection() {
@@ -429,7 +592,21 @@ public class Database {
     }
 
     public static void watchMovie() {
-
+        System.out.println("Enter the name of the movie you want to watch:");
+        String movieName = "";
+        int movieID = -1;
+        String sql = "SELECT movie_id FROM movie WHERE title = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, movieName);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                rs.next();
+                movieID = rs.getInt("movie_id");
+            }
+            sql = "INSERT ";
+        }   
+        catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public static void watchCollection() {
@@ -437,23 +614,35 @@ public class Database {
     }
 
     public static void followUser() {
-
+        System.out.println("Enter the username of the user you want to follow:");
+        String userToFollow = scanner.nextLine();
+        String sql = "INSERT INTO follows (follower, followee) " +
+                     "VALUES (?, ?)";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            pstmt.setString(2, userToFollow);
+            pstmt.executeUpdate();
+            System.out.println("Followed user successfully.");
+        }   
+        catch (SQLException e) {
+            e.printStackTrace();
+        } 
     }
 
     public static void unfollowUser() {
-
+        System.out.println("Enter the username of the user you want to unfollow");
+        String userToUnfollow = scanner.nextLine();
+        String sql = "DELETE FROM * WHERE follower = ? AND followee = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            pstmt.setString(2, userToUnfollow);
+            pstmt.executeUpdate();
+            System.out.println("Unfollowed user successfully.");
+        }   
+        catch (SQLException e) {
+            e.printStackTrace();
+        } 
     }
-
-    public static void displayInitialCommands() {
-        System.out.println("Choose an option:");
-        System.out.println("1. Create an account");
-        System.out.println("2. Log into an existing account");
-        System.out.println("3. Exit");
-    }
-
-    public static void displayAccountCommands() {
-        System.out.println("Choose an option:");
-        System.out.println("1. Create a collection");
         System.out.println("2. See collection");
         System.out.println("3. Search for a movie by name");
         System.out.println("4. Search for a movie by release date");
