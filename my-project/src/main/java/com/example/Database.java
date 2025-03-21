@@ -7,6 +7,7 @@ import java.util.Properties;
 import java.util.Scanner;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -20,7 +21,7 @@ public class Database {
 
     public static void main(String[] args) throws SQLException {
 
-        int lport = 8083;
+        int lport = 8089;
         String rhost = "starbug.cs.rit.edu";
         int rport = 5432;
         String user = "YOUR_CS_USERNAME"; //change to your username
@@ -114,7 +115,18 @@ public class Database {
                             searchMovieByGenre();
                             break;
                         case 8:
-                            addMovies();
+                            displayAddCommands();
+
+                            accountChoice = scanner.nextInt();
+                            scanner.nextLine();
+                            spaces();
+                            
+                            switch (accountChoice) {
+                                case 1:
+                                    addMovies();
+                                case 2:
+                                    contributeTo();
+                            }
                             break;
                         case 9:
                             removeMovies();
@@ -185,11 +197,14 @@ public class Database {
             System.out.print("Enter Biography: ");
             String biography = scanner.nextLine();
             Date currentDate = new Date(System.currentTimeMillis());
+            System.out.print("Enter Email (If you have multiple, enter each with a comma in between): ");
+            String email = scanner.nextLine();
+            ArrayList<String> emailArray = new ArrayList<>(Arrays.asList(email.split(",")));
             
            
-            String sql = "INSERT INTO users (username, password, first_name, last_name, gender, dob, biography, last_access_date, creation_date) " +
+            String createAccount = "INSERT INTO users (username, password, first_name, last_name, gender, dob, biography, last_access_date, creation_date) " +
                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            try (PreparedStatement pstmt = conn.prepareStatement(createAccount)) {
                 pstmt.setString(1, inputtedUsername);
                 pstmt.setString(2, password);
                 pstmt.setString(3, firstName);
@@ -202,6 +217,17 @@ public class Database {
                 pstmt.executeUpdate();
                 System.out.println("\nACCOUNT CREATED SUCCESSFULLY");
             }
+            
+            for(int i = 0; i < emailArray.size(); i++) {
+                String createEmail = "INSERT INTO email (username, email)" + 
+                            "VALUES (?, ?)";
+                try (PreparedStatement pstmt = conn.prepareStatement(createEmail)) {
+                    pstmt.setString(1, inputtedUsername);
+                    pstmt.setString(2, emailArray.get(i));
+                    pstmt.executeUpdate();
+                }
+            }
+            System.out.println("\nEMAIL(s) CREATED SUCCESSFULLY");
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -547,6 +573,10 @@ public class Database {
         }
     }
 
+    public static void contributeTo() {
+
+    }
+
     public static void removeMovies() {
         System.out.println("Enter the name of the collection you want to delete a movie from:");
         String collectionName = scanner.nextLine();
@@ -865,6 +895,15 @@ public class Database {
         System.out.println("15. Follow User");
         System.out.println("16. Unfollow User");
         System.out.println("17. Exit");
+        printLines();
+        System.out.print("Enter Choice: ");
+    }
+
+    public static void displayAddCommands() {
+        spaces();
+        printLines();
+        System.out.println("1. Add to my Collections");
+        System.out.println("2. Add to a Different Collection");
         printLines();
         System.out.print("Enter Choice: ");
     }
