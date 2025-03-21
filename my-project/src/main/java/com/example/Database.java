@@ -21,7 +21,7 @@ public class Database {
 
     public static void main(String[] args) throws SQLException {
 
-        int lport = 8089;
+        int lport = 12289;
         String rhost = "starbug.cs.rit.edu";
         int rport = 5432;
         String user = "YOUR_CS_USERNAME"; //change to your username
@@ -331,7 +331,7 @@ public class Database {
         System.out.print("Enter Movie Name: ");
         String movieName = scanner.nextLine();
         String sql = "SELECT DISTINCT movie.title, cast_member.first_name AS cast_first, cast_member.last_name AS cast_last, director.first_name AS director_first, director.last_name AS director_last, " +
-                     "movie.length, movie.mpaa_rating, rates.rating AS rate, released_on.release_date AS release_date, studio.name AS studio_name, genre.genre_name AS genre_name " +
+                     "movie.length, movie.mpaa_rating, rates.rating AS rate, released_on.release_date AS release_date " +
                      "FROM movie " +
                      "LEFT JOIN casts " + 
                      "ON movie.movie_id = casts.movie_id " + 
@@ -342,7 +342,7 @@ public class Database {
                      "LEFT JOIN director " +
                      "ON directed_by.director_id = director.director_id " +
                      "LEFT JOIN rates " +
-                     "ON movie.movie_id = rates.movie_id " +
+                     "ON movie.movie_id = rates.movie_id AND rates.username = ? " +
                      "LEFT JOIN released_on " +
                      "ON movie.movie_id = released_on.movie_id " +
                      "LEFT JOIN produced_by " +
@@ -356,28 +356,32 @@ public class Database {
                      "WHERE movie.title = ? " +
                      "ORDER BY movie.title ASC, released_on.release_date ASC";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, movieName);
+            pstmt.setString(1, username);
+            pstmt.setString(2, movieName);
             try (ResultSet rs = pstmt.executeQuery()) {
                 System.out.println("Sorted by title, release date ascending");
-                System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", "title", "cast_first", "cast_last", "director_first", "director_last", "length", "mpaa_rating", "rating");
-                System.out.println("----------------------------------------------------------------------------------------------------------");
+                System.out.printf("%-40s %-15s %-15s %-15s %-15s %-15s %-15s %-15s%n", "title", "cast_first", "cast_last", "director_first", "director_last", "length", "mpaa_rating", "rating");
+                printLineTables();
                 while (rs.next()) {
                     BigDecimal ratingBD = (BigDecimal) rs.getObject("rate");
                     Double rating = (ratingBD != null) ? ratingBD.doubleValue() : null;
-                    System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", rs.getString("title"), rs.getString("cast_first"), rs.getString("cast_last"), rs.getString("director_first"), rs.getString("director_last"), rs.getTime("length"), rs.getString("mpaa_rating"), (rating != null ? rating.toString() : "NULL"));
+                    System.out.printf("%-40s %-15s %-15s %-15s %-15s %-15s %-15s %-15s%n", rs.getString("title"), rs.getString("cast_first"), rs.getString("cast_last"), rs.getString("director_first"), rs.getString("director_last"), rs.getTime("length"), rs.getString("mpaa_rating"), (rating != null ? rating.toString() : "NULL"));
                 }
 
                 while (true) {
                     System.out.println("\nOther Sort Options: ");
                     printLines();
                     displaySearchSortingOptions();
+                    System.out.print("Enter A Number Between 1-5: ");
                     int sortingOption = scanner.nextInt();
                     if (sortingOption == 5) {
                         break;
                     }
                     System.out.println("\nAscending or Descending: ");
                     displayAscDescOptions();
+                    System.out.print("Enter A Number Between 1-2: ");
                     int ascDescOption = scanner.nextInt();
+                    spaces();
                     switch(sortingOption) {
                         case 1:
                             sortMovies(pstmt, sortingOption, ascDescOption);
@@ -407,7 +411,7 @@ public class Database {
         String release_date_string = scanner.nextLine();
         Date release_date = Date.valueOf(release_date_string);
         String sql = "SELECT DISTINCT movie.title, cast_member.first_name AS cast_first, cast_member.last_name AS cast_last, director.first_name AS director_first, director.last_name AS director_last, " +
-                     "movie.length, movie.mpaa_rating, rates.rating AS rate, released_on.release_date AS release_date, studio.name AS studio_name, genre.genre_name AS genre_name " +
+                     "movie.length, movie.mpaa_rating, rates.rating AS rate, released_on.release_date AS release_date " +
                      "FROM movie " +
                      "LEFT JOIN casts " + 
                      "ON movie.movie_id = casts.movie_id " + 
@@ -418,7 +422,7 @@ public class Database {
                      "LEFT JOIN director " +
                      "ON directed_by.director_id = director.director_id " +
                      "LEFT JOIN rates " +
-                     "ON movie.movie_id = rates.movie_id " +
+                     "ON movie.movie_id = rates.movie_id AND rates.username = ? " +
                      "LEFT JOIN released_on " +
                      "ON movie.movie_id = released_on.movie_id " +
                      "LEFT JOIN produced_by " +
@@ -432,28 +436,32 @@ public class Database {
                      "WHERE released_on.release_date = ? " +
                      "ORDER BY movie.title ASC, released_on.release_date ASC";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setDate(1, release_date);
+            pstmt.setString(1, username);
+            pstmt.setDate(2, release_date);
             try (ResultSet rs = pstmt.executeQuery()) {
                 System.out.println("Sorted by title, release date ascending");
-                System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", "title", "cast_first", "cast_last", "director_first", "director_last", "length", "mpaa_rating", "rating");
-                System.out.println("----------------------------------------------------------------------------------------------------------");
+                System.out.printf("%-40s %-15s %-15s %-15s %-15s %-15s %-15s %-15s%n", "title", "cast_first", "cast_last", "director_first", "director_last", "length", "mpaa_rating", "rating");
+                printLineTables();
                 while (rs.next()) {
                     BigDecimal ratingBD = (BigDecimal) rs.getObject("rate");
                     Double rating = (ratingBD != null) ? ratingBD.doubleValue() : null;
-                    System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", rs.getString("title"), rs.getString("cast_first"), rs.getString("cast_last"), rs.getString("director_first"), rs.getString("director_last"), rs.getTime("length"), rs.getString("mpaa_rating"), (rating != null ? rating.toString() : "NULL"));
+                    System.out.printf("%-40s %-15s %-15s %-15s %-15s %-15s %-15s %-15s%n", rs.getString("title"), rs.getString("cast_first"), rs.getString("cast_last"), rs.getString("director_first"), rs.getString("director_last"), rs.getTime("length"), rs.getString("mpaa_rating"), (rating != null ? rating.toString() : "NULL"));
                 }
 
                 while (true) {
                     System.out.println("\nOther Sort Options: ");
                     printLines();
                     displaySearchSortingOptions();
+                    System.out.print("Enter A Number Between 1-5: ");
                     int sortingOption = scanner.nextInt();
                     if (sortingOption == 5) {
                         break;
                     }
                     System.out.println("\nAscending or Descending: ");
                     displayAscDescOptions();
+                    System.out.print("Enter A Number Between 1-2: ");
                     int ascDescOption = scanner.nextInt();
+                    spaces();
                     switch(sortingOption) {
                         case 1:
                             sortMovies(pstmt, sortingOption, ascDescOption);
@@ -485,7 +493,7 @@ public class Database {
         String first = nameArray[0];
         String last = nameArray[1];
         String sql = "SELECT DISTINCT movie.title, cast_member.first_name AS cast_first, cast_member.last_name AS cast_last, director.first_name AS director_first, director.last_name AS director_last, " +
-                     "movie.length, movie.mpaa_rating, rates.rating AS rate, released_on.release_date AS release_date, studio.name AS studio_name, genre.genre_name AS genre_name " +
+                     "movie.length, movie.mpaa_rating, rates.rating AS rate, released_on.release_date AS release_date " +
                      "FROM movie " +
                      "LEFT JOIN casts " + 
                      "ON movie.movie_id = casts.movie_id " + 
@@ -496,7 +504,7 @@ public class Database {
                      "LEFT JOIN director " +
                      "ON directed_by.director_id = director.director_id " +
                      "LEFT JOIN rates " +
-                     "ON movie.movie_id = rates.movie_id " +
+                     "ON movie.movie_id = rates.movie_id AND rates.username = ? " +
                      "LEFT JOIN released_on " +
                      "ON movie.movie_id = released_on.movie_id " +
                      "LEFT JOIN produced_by " +
@@ -510,29 +518,33 @@ public class Database {
                      "WHERE cast_member.first_name = ? AND cast_member.last_name = ? " + 
                      "ORDER BY movie.title ASC, released_on.release_date ASC";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, first);
-            pstmt.setString(2, last);
+            pstmt.setString(1, username);
+            pstmt.setString(2, first);
+            pstmt.setString(3, last);
             try (ResultSet rs = pstmt.executeQuery()) {
                 System.out.println("Sorted by title, release date ascending");
-                System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", "title", "cast_first", "cast_last", "director_first", "director_last", "length", "mpaa_rating", "rating");
-                System.out.println("----------------------------------------------------------------------------------------------------------");
+                System.out.printf("%-40s %-15s %-15s %-15s %-15s %-15s %-15s %-15s%n", "title", "cast_first", "cast_last", "director_first", "director_last", "length", "mpaa_rating", "rating");
+                printLineTables();
                 while (rs.next()) {
                     BigDecimal ratingBD = (BigDecimal) rs.getObject("rate");
                     Double rating = (ratingBD != null) ? ratingBD.doubleValue() : null;
-                    System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", rs.getString("title"), rs.getString("cast_first"), rs.getString("cast_last"), rs.getString("director_first"), rs.getString("director_last"), rs.getTime("length"), rs.getString("mpaa_rating"), (rating != null ? rating.toString() : "NULL"));
+                    System.out.printf("%-40s %-15s %-15s %-15s %-15s %-15s %-15s %-15s%n", rs.getString("title"), rs.getString("cast_first"), rs.getString("cast_last"), rs.getString("director_first"), rs.getString("director_last"), rs.getTime("length"), rs.getString("mpaa_rating"), (rating != null ? rating.toString() : "NULL"));
                 }
 
                 while (true) {
                     System.out.println("\nOther Sort Options: ");
                     printLines();
                     displaySearchSortingOptions();
+                    System.out.print("Enter A Number Between 1-5: ");
                     int sortingOption = scanner.nextInt();
                     if (sortingOption == 5) {
                         break;
                     }
                     System.out.println("\nAscending or Descending: ");
                     displayAscDescOptions();
+                    System.out.print("Enter A Number Between 1-2: ");
                     int ascDescOption = scanner.nextInt();
+                    spaces();
                     switch(sortingOption) {
                         case 1:
                             sortMovies(pstmt, sortingOption, ascDescOption);
@@ -561,7 +573,7 @@ public class Database {
         System.out.print("Enter Studio Full Name: ");
         String studio = scanner.nextLine();
         String sql = "SELECT DISTINCT movie.title, cast_member.first_name AS cast_first, cast_member.last_name AS cast_last, director.first_name AS director_first, director.last_name AS director_last, " +
-                     "movie.length, movie.mpaa_rating, rates.rating AS rate, released_on.release_date AS release_date, studio.name AS studio_name, genre.genre_name AS genre_name " +
+                     "movie.length, movie.mpaa_rating, rates.rating AS rate, released_on.release_date AS release_date, studio.name AS studio_name " +
                      "FROM movie " +
                      "LEFT JOIN casts " + 
                      "ON movie.movie_id = casts.movie_id " + 
@@ -572,7 +584,7 @@ public class Database {
                      "LEFT JOIN director " +
                      "ON directed_by.director_id = director.director_id " +
                      "LEFT JOIN rates " +
-                     "ON movie.movie_id = rates.movie_id " +
+                     "ON movie.movie_id = rates.movie_id AND rates.username = ? " +
                      "LEFT JOIN produced_by " +
                      "ON movie.movie_id = produced_by.movie_id " +
                      "LEFT JOIN studio " +
@@ -586,28 +598,32 @@ public class Database {
                      "WHERE studio.name = ? " + 
                      "ORDER BY movie.title ASC, released_on.release_date ASC";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, studio);
+            pstmt.setString(1, username);
+            pstmt.setString(2, studio);
             try (ResultSet rs = pstmt.executeQuery()) {
                 System.out.println("Sorted by title, release date ascending");
-                System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", "title", "cast_first", "cast_last", "director_first", "director_last", "length", "mpaa_rating", "rating");
-                System.out.println("----------------------------------------------------------------------------------------------------------");
+                System.out.printf("%-40s %-15s %-15s %-15s %-15s %-15s %-15s %-15s%n", "title", "cast_first", "cast_last", "director_first", "director_last", "length", "mpaa_rating", "rating");
+                printLineTables();
                 while (rs.next()) {
                     BigDecimal ratingBD = (BigDecimal) rs.getObject("rate");
                     Double rating = (ratingBD != null) ? ratingBD.doubleValue() : null;
-                    System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", rs.getString("title"), rs.getString("cast_first"), rs.getString("cast_last"), rs.getString("director_first"), rs.getString("director_last"), rs.getTime("length"), rs.getString("mpaa_rating"), (rating != null ? rating.toString() : "NULL"));
+                    System.out.printf("%-40s %-15s %-15s %-15s %-15s %-15s %-15s %-15s%n", rs.getString("title"), rs.getString("cast_first"), rs.getString("cast_last"), rs.getString("director_first"), rs.getString("director_last"), rs.getTime("length"), rs.getString("mpaa_rating"), (rating != null ? rating.toString() : "NULL"));
                 }
 
                 while (true) {
                     System.out.println("\nOther Sort Options: ");
                     printLines();
                     displaySearchSortingOptions();
+                    System.out.print("Enter A Number Between 1-5: ");
                     int sortingOption = scanner.nextInt();
                     if (sortingOption == 5) {
                         break;
                     }
                     System.out.println("\nAscending or Descending: ");
                     displayAscDescOptions();
+                    System.out.print("Enter A Number Between 1-2: ");
                     int ascDescOption = scanner.nextInt();
+                    spaces();
                     switch(sortingOption) {
                         case 1:
                             sortMovies(pstmt, sortingOption, ascDescOption);
@@ -636,7 +652,7 @@ public class Database {
         System.out.print("Enter Movie Genre: ");
         String genre = scanner.nextLine();
         String sql = "SELECT DISTINCT movie.title, cast_member.first_name AS cast_first, cast_member.last_name AS cast_last, director.first_name AS director_first, director.last_name AS director_last, " +
-                     "movie.length, movie.mpaa_rating, rates.rating AS rate, released_on.release_date AS release_date, studio.name AS studio_name, genre.genre_name AS genre_name " +
+                     "movie.length, movie.mpaa_rating, rates.rating AS rate, released_on.release_date AS release_date, genre.genre_name AS genre_name " +
                      "FROM movie " +
                      "LEFT JOIN casts " + 
                      "ON movie.movie_id = casts.movie_id " + 
@@ -647,7 +663,7 @@ public class Database {
                      "LEFT JOIN director " +
                      "ON directed_by.director_id = director.director_id " +
                      "LEFT JOIN rates " +
-                     "ON movie.movie_id = rates.movie_id " +
+                     "ON movie.movie_id = rates.movie_id AND rates.username = ? " +
                      "LEFT JOIN has_genre " +
                      "ON movie.movie_id = has_genre.movie_id " +
                      "LEFT JOIN genre " + 
@@ -658,33 +674,35 @@ public class Database {
                      "ON movie.movie_id = produced_by.movie_id " +
                      "LEFT JOIN studio " +
                      "ON produced_by.studio_id = studio.studio_id " +
-                     "LEFT JOIN has_genre " +
-                     "ON movie.movie_id = has_genre.movie_id " +
                      "WHERE genre.genre_name = ? " +
                      "ORDER BY movie.title ASC, released_on.release_date ASC";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, genre);
+            pstmt.setString(1, username);
+            pstmt.setString(2, genre);
             try (ResultSet rs = pstmt.executeQuery()) {
                 System.out.println("Sorted by title, release date ascending");
-                System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", "title", "cast_first", "cast_last", "director_first", "director_last", "length", "mpaa_rating", "rating");
-                System.out.println("----------------------------------------------------------------------------------------------------------");
+                System.out.printf("%-40s %-15s %-15s %-15s %-15s %-15s %-15s %-15s%n", "title", "cast_first", "cast_last", "director_first", "director_last", "length", "mpaa_rating", "rating");
+                printLineTables();
                 while (rs.next()) {
                     BigDecimal ratingBD = (BigDecimal) rs.getObject("rate");
                     Double rating = (ratingBD != null) ? ratingBD.doubleValue() : null;
-                    System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", rs.getString("title"), rs.getString("cast_first"), rs.getString("cast_last"), rs.getString("director_first"), rs.getString("director_last"), rs.getTime("length"), rs.getString("mpaa_rating"), (rating != null ? rating.toString() : "NULL"));
+                    System.out.printf("%-40s %-15s %-15s %-15s %-15s %-15s %-15s %-15s%n", rs.getString("title"), rs.getString("cast_first"), rs.getString("cast_last"), rs.getString("director_first"), rs.getString("director_last"), rs.getTime("length"), rs.getString("mpaa_rating"), (rating != null ? rating.toString() : "NULL"));
                 }
 
                 while (true) {
                     System.out.println("\nOther Sort Options: ");
                     printLines();
                     displaySearchSortingOptions();
+                    System.out.print("Enter A Number Between 1-5: ");
                     int sortingOption = scanner.nextInt();
                     if (sortingOption == 5) {
                         break;
                     }
                     System.out.println("\nAscending or Descending: ");
                     displayAscDescOptions();
+                    System.out.print("Enter A Number Between 1-2: ");
                     int ascDescOption = scanner.nextInt();
+                    spaces();
                     switch(sortingOption) {
                         case 1:
                             sortMovies(pstmt, sortingOption, ascDescOption);
@@ -710,7 +728,6 @@ public class Database {
     
     public static void sortMovies(PreparedStatement pstmt, int sortBy, int ascOrDesc) {
         String sql = pstmt.toString();
-        String[] sqlArray = sql.split("ORDER BY");
         String sortByString = "";
         String ascOrDescString = "";
         if (sortBy == 1) {
@@ -718,59 +735,68 @@ public class Database {
         }
         if (sortBy == 2) {
             sortByString = "studio.name";
+            if (!sql.contains(sortByString)) {
+                String[] sqlArray2 = sql.split("FROM");
+                sql = sqlArray2[0] + ", studio.name AS studio_name FROM" + sqlArray2[1];
+            }
         }
         if (sortBy == 3) {
             sortByString = "genre.genre_name";
+            if (!sql.contains(sortByString)) {
+                String[] sqlArray2 = sql.split("FROM");
+                sql = sqlArray2[0] + ", genre.genre_name AS genre_name FROM" + sqlArray2[1];
+            }
         }
         if (sortBy == 4) {
-            sortByString = "released_on.release_date"; // update so its year instead of date
+            sortByString = "released_on.release_date";
         }
         if (ascOrDesc == 1) {
             ascOrDescString = "ASC";
         } else {
             ascOrDescString = "DESC";
         }
+        String[] sqlArray = sql.split("ORDER BY");
         sql = sqlArray[0] + "ORDER BY " + sortByString + " " + ascOrDescString;
         try (PreparedStatement pstmt2 = conn.prepareStatement(sql)) {
             try (ResultSet rs = pstmt2.executeQuery()) {
                 if (sortBy == 1) {
-                    System.out.println("Sorting By Movie Name " + ascOrDesc);
-                    System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", "title", "cast_first", "cast_last", "director_first", "director_last", "length", "mpaa_rating", "rating");
-                    System.out.println("----------------------------------------------------------------------------------------------------------");
+                    System.out.println("Sorting By Movie Name " + ascOrDescString);
+                    System.out.printf("%-40s %-15s %-15s %-15s %-15s %-15s %-15s %-15s%n", "title", "cast_first", "cast_last", "director_first", "director_last", "length", "mpaa_rating", "rating");
+                    printLineTables();
                     while (rs.next()) {
                         BigDecimal ratingBD = (BigDecimal) rs.getObject("rate");
                         Double rating = (ratingBD != null) ? ratingBD.doubleValue() : null;
-                        System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", rs.getString("title"), rs.getString("cast_first"), rs.getString("cast_last"), rs.getString("director_first"), rs.getString("director_last"), rs.getTime("length"), rs.getString("mpaa_rating"), (rating != null ? rating.toString() : "NULL"));
+                        System.out.printf("%-40s %-15s %-15s %-15s %-15s %-15s %-15s %-15s%n", rs.getString("title"), rs.getString("cast_first"), rs.getString("cast_last"), rs.getString("director_first"), rs.getString("director_last"), rs.getTime("length"), rs.getString("mpaa_rating"), (rating != null ? rating.toString() : "NULL"));
                     }
                 }
                 if (sortBy == 2) {
-                    System.out.println("Sorting By Movie Studio " + ascOrDesc);
-                    System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", "title", "cast_first", "cast_last", "director_first", "director_last", "length", "mpaa_rating", "rating", "studio");
-                    System.out.println("----------------------------------------------------------------------------------------------------------");
+                    System.out.println("Sorting By Movie Studio " + ascOrDescString);
+                    System.out.printf("%-40s %-15s %-15s %-15s %-15s %-15s %-15s %-15s %-15s%n", "title", "cast_first", "cast_last", "director_first", "director_last", "length", "mpaa_rating", "rating", "studio");
+                    printLineTables();
                     while (rs.next()) {
                         BigDecimal ratingBD = (BigDecimal) rs.getObject("rate");
                         Double rating = (ratingBD != null) ? ratingBD.doubleValue() : null;
-                        System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", rs.getString("title"), rs.getString("cast_first"), rs.getString("cast_last"), rs.getString("director_first"), rs.getString("director_last"), rs.getTime("length"), rs.getString("mpaa_rating"), (rating != null ? rating.toString() : "NULL"), rs.getString("studio_name"));
+                        System.out.printf("%-40s %-15s %-15s %-15s %-15s %-15s %-15s %-15s %-15s%n", rs.getString("title"), rs.getString("cast_first"), rs.getString("cast_last"), rs.getString("director_first"), rs.getString("director_last"), rs.getTime("length"), rs.getString("mpaa_rating"), (rating != null ? rating.toString() : "NULL"), rs.getString("studio_name"));
                     }
                 }
                 if (sortBy == 3) {
-                    System.out.println("Sorting By Movie Genre " + ascOrDesc);
-                    System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", "title", "cast_first", "cast_last", "director_first", "director_last", "length", "mpaa_rating", "rating", "genre");
-                    System.out.println("----------------------------------------------------------------------------------------------------------");
+                    System.out.println("Sorting By Movie Genre " + ascOrDescString);
+                    System.out.printf("%-40s %-15s %-15s %-15s %-15s %-15s %-15s %-15s %-15s%n", "title", "cast_first", "cast_last", "director_first", "director_last", "length", "mpaa_rating", "rating", "genre");
+                    printLineTables();
                     while (rs.next()) {
                         BigDecimal ratingBD = (BigDecimal) rs.getObject("rate");
                         Double rating = (ratingBD != null) ? ratingBD.doubleValue() : null;
-                        System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", rs.getString("title"), rs.getString("cast_first"), rs.getString("cast_last"), rs.getString("director_first"), rs.getString("director_last"), rs.getTime("length"), rs.getString("mpaa_rating"), (rating != null ? rating.toString() : "NULL"), rs.getString("genre_name"));
+                        System.out.printf("%-40s %-15s %-15s %-15s %-15s %-15s %-15s %-15s %-15s%n", rs.getString("title"), rs.getString("cast_first"), rs.getString("cast_last"), rs.getString("director_first"), rs.getString("director_last"), rs.getTime("length"), rs.getString("mpaa_rating"), (rating != null ? rating.toString() : "NULL"), rs.getString("genre_name"));
                     }
                 }
                 if (sortBy == 4) {
-                    System.out.println("Sorting By Movie Release Year " + ascOrDesc);
-                    System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", "title", "cast_first", "cast_last", "director_first", "director_last", "length", "mpaa_rating", "rating", "release_year");
-                    System.out.println("----------------------------------------------------------------------------------------------------------");
+                    System.out.println("Sorting By Movie Release Year " + ascOrDescString);
+                    System.out.printf("%-40s %-15s %-15s %-15s %-15s %-15s %-15s %-15s %-15s%n", "title", "cast_first", "cast_last", "director_first", "director_last", "length", "mpaa_rating", "rating", "release_year");
+                    printLineTables();
                     while (rs.next()) {
                         BigDecimal ratingBD = (BigDecimal) rs.getObject("rate");
                         Double rating = (ratingBD != null) ? ratingBD.doubleValue() : null;
-                        System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", rs.getString("title"), rs.getString("cast_first"), rs.getString("cast_last"), rs.getString("director_first"), rs.getString("director_last"), rs.getTime("length"), rs.getString("mpaa_rating"), (rating != null ? rating.toString() : "NULL"), rs.getString("release_date"));
+                        System.out.printf("%-40s %-15s %-15s %-15s %-15s %-15s %-15s %-15s %-15s%n", rs.getString("title"), rs.getString("cast_first"), rs.getString("cast_last"), rs.getString("director_first"), rs.getString("director_last"), rs.getTime("length"), rs.getString("mpaa_rating"), (rating != null ? rating.toString() : "NULL"), rs.getString("release_date"));
                     }
                 }
             }
@@ -857,6 +883,35 @@ public class Database {
             System.out.println("MOVIE ADDED TO " + collectionName + " SUCCESSFULLY");
         } catch (SQLException e) {
             e.printStackTrace();
+        }
+
+        String searchSQL = "SELECT COUNT(*) as count FROM contribute_to WHERE collection_id = ? AND username = ? AND owner_username = ?";
+        boolean exists = false;
+        try (PreparedStatement pstmt = conn.prepareStatement(searchSQL)) {
+            pstmt.setInt(1, collectionID);
+            pstmt.setString(2, username);
+            pstmt.setString(3, username);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (!rs.isBeforeFirst()) {
+                    exists = true;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        if(!exists) {
+            String insertSQL3 = "INSERT INTO contribute_to (collection_id, username, owner_username)" +
+                     "VALUES (?, ?, ?)";
+            try (PreparedStatement pstmt = conn.prepareStatement(insertSQL3)) {
+                pstmt.setInt(1, collectionID);
+                pstmt.setString(2, username);
+                pstmt.setString(3, username);
+                pstmt.executeUpdate();
+                System.out.println("MOVIE ADDED TO CONTRIBUTIONS SUCCESSFULLY");
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -1016,6 +1071,30 @@ public class Database {
 
     // Function to delete a user's collection
     public static void deleteCollection() {
+        String searchSql = "SELECT collection.collection_id, collection.collection_name, collection.quantity " +
+                           "FROM collection " +
+                           "WHERE owner_username = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(searchSql)) {
+            pstmt.setString(1, username);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                System.out.println("My Collections: ");
+                printLines();
+                if (rs.next()) {
+                    System.out.print(rs.getString("collection_name"));
+                }
+                else {
+                    System.out.println("NO COLLECTIONS FOUND");
+                    return;
+                }
+                while(rs.next()) {
+                    System.out.print(", " + rs.getString("collection_name"));
+                }
+                System.out.println("\n");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
         System.out.print("Enter Collection To Delete: ");
         String collectionName = scanner.nextLine();
         
@@ -1143,9 +1222,15 @@ public class Database {
         try (PreparedStatement pstmt = conn.prepareStatement(searchSql)) {
             pstmt.setString(1, username);
             try (ResultSet rs = pstmt.executeQuery()) {
-                System.out.print("My Collections: ");
+                System.out.println("My Collections: ");
                 printLines();
-                rs.next();
+                if (rs.next()) {
+                    System.out.print(rs.getString("collection_name"));
+                }
+                else {
+                    System.out.println("NO COLLECTIONS FOUND");
+                    return;
+                }
                 System.out.print(rs.getString("collection_name"));
                 while(rs.next()) {
                     System.out.print(", " + rs.getString("collection_name"));
@@ -1313,6 +1398,11 @@ public class Database {
     // Function to display lines for formatting
     public static void printLines() {
         System.out.println("-----------------------------------------");
+    }
+
+    // Function to display lines for the formatting of tables
+    public static void printLineTables() {
+        System.out.println("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
     }
 
     // Function to display the enter to continue feature
