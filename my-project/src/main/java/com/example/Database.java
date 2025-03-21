@@ -729,6 +729,7 @@ public class Database {
         try (PreparedStatement pstmt2 = conn.prepareStatement(sql)) {
             try (ResultSet rs = pstmt2.executeQuery()) {
                 if (sortBy == 1) {
+                    System.out.println("Sorting By Movie Name " + ascOrDesc);
                     System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", "title", "cast_first", "cast_last", "director_first", "director_last", "length", "mpaa_rating", "rating");
                     System.out.println("----------------------------------------------------------------------------------------------------------");
                     while (rs.next()) {
@@ -738,6 +739,7 @@ public class Database {
                     }
                 }
                 if (sortBy == 2) {
+                    System.out.println("Sorting By Movie Studio " + ascOrDesc);
                     System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", "title", "cast_first", "cast_last", "director_first", "director_last", "length", "mpaa_rating", "rating", "studio");
                     System.out.println("----------------------------------------------------------------------------------------------------------");
                     while (rs.next()) {
@@ -747,6 +749,7 @@ public class Database {
                     }
                 }
                 if (sortBy == 3) {
+                    System.out.println("Sorting By Movie Genre " + ascOrDesc);
                     System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", "title", "cast_first", "cast_last", "director_first", "director_last", "length", "mpaa_rating", "rating", "genre");
                     System.out.println("----------------------------------------------------------------------------------------------------------");
                     while (rs.next()) {
@@ -756,6 +759,7 @@ public class Database {
                     }
                 }
                 if (sortBy == 4) {
+                    System.out.println("Sorting By Movie Release Year " + ascOrDesc);
                     System.out.printf("%-25s %-12s %-12s %-12s %-12s %-12s %-12s %-12s %-12s%n", "title", "cast_first", "cast_last", "director_first", "director_last", "length", "mpaa_rating", "rating", "release_year");
                     System.out.println("----------------------------------------------------------------------------------------------------------");
                     while (rs.next()) {
