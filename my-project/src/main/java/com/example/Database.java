@@ -196,7 +196,8 @@ public class Database {
             Date dob = Date.valueOf(dobString);
             System.out.print("Enter Biography: ");
             String biography = scanner.nextLine();
-            Date currentDate = new Date(System.currentTimeMillis());
+            //Date currentDate = new Date(System.currentTimeMillis());
+            Timestamp currentDate = new Timestamp(System.currentTimeMillis());
             System.out.print("Enter Email (If you have multiple, enter each with a comma in between): ");
             String email = scanner.nextLine();
             ArrayList<String> emailArray = new ArrayList<>(Arrays.asList(email.split(",")));
@@ -212,8 +213,10 @@ public class Database {
                 pstmt.setString(5, gender);
                 pstmt.setDate(6, dob);
                 pstmt.setString(7, biography);
-                pstmt.setDate(8, currentDate);
-                pstmt.setDate(9, currentDate);
+                // pstmt.setDate(8, currentDate);
+                // pstmt.setDate(9, currentDate);
+                pstmt.setTimestamp(8, currentDate);
+                pstmt.setTimestamp(9, currentDate);
                 pstmt.executeUpdate();
                 System.out.println("\nACCOUNT CREATED SUCCESSFULLY");
             }
@@ -258,7 +261,8 @@ public class Database {
 
             String sqlUpdate = "UPDATE users SET last_access_date = ? WHERE username = ?";
             try (PreparedStatement pstmt = conn.prepareStatement(sqlUpdate)) {
-                pstmt.setDate(1, new Date(System.currentTimeMillis()));
+                pstmt.setTimestamp(1, new Timestamp(System.currentTimeMillis()));
+                // pstmt.setDate(1, new Date(System.currentTimeMillis()));
                 pstmt.setString(2, username);
                 pstmt.executeUpdate();
             }
@@ -305,9 +309,9 @@ public class Database {
     // Function to view all of the user's collection
     public static void seeCollection() {
         String sql = "SELECT collection.collection_name, collection.quantity, SUM(movie.length) AS total_length FROM collection " + 
-                     "INNER JOIN consists_of " + 
+                     "LEFT JOIN consists_of " + 
                      "ON collection.collection_id = consists_of.collection_id " +
-                     "INNER JOIN movie " +
+                     "LEFT JOIN movie " +
                      "ON consists_of.movie_id = movie.movie_id " +
                      "WHERE collection.owner_username = ? " +
                      "GROUP BY collection.collection_id, collection.collection_name, collection.quantity " +
@@ -318,10 +322,12 @@ public class Database {
                 System.out.printf("%-30s %-10s %-10s%n", "Collection Name", "Quantity", "Total Length");
                 System.out.println("--------------------------------------------------------------");
                 while (rs.next()) {
+                    printLines();
                     System.out.printf("%-30s %-10s %-10s%n", rs.getString("collection_name"), rs.getInt("quantity"), rs.getTime("total_length"));
                 }
             }
-        } catch (SQLException e) {
+        }
+        catch (SQLException e) {
             e.printStackTrace();
         }
     }
