@@ -330,7 +330,8 @@ public class Database {
     public static void searchMovieByName() {
         System.out.print("Enter Movie Name: ");
         String movieName = scanner.nextLine();
-        String sql = "SELECT DISTINCT movie.title, cast_member.first_name AS cast_first, cast_member.last_name AS cast_last, director.first_name AS director_first, director.last_name AS director_last, movie.length, movie.mpaa_rating, rates.rating AS rate, released_on.release_date AS release_date, studio.name AS studio_name, genre.genre_name AS genre_name " +
+        String sql = "SELECT DISTINCT movie.title, cast_member.first_name AS cast_first, cast_member.last_name AS cast_last, director.first_name AS director_first, director.last_name AS director_last, " +
+                     "movie.length, movie.mpaa_rating, rates.rating AS rate, released_on.release_date AS release_date, studio.name AS studio_name, genre.genre_name AS genre_name " +
                      "FROM movie " +
                      "LEFT JOIN casts " + 
                      "ON movie.movie_id = casts.movie_id " + 
@@ -402,10 +403,11 @@ public class Database {
 
     // Function to search movies by release date
     public static void searchMovieByReleaseDate() {
-        System.out.print("Enter Release Date: ");
+        System.out.print("Enter Release Date (YYYY-MM-DD): ");
         String release_date_string = scanner.nextLine();
         Date release_date = Date.valueOf(release_date_string);
-        String sql = "SELECT DISTINCT movie.title, cast_member.first_name AS cast_first, cast_member.last_name AS cast_last, director.first_name AS director_first, director.last_name AS director_last, movie.length, movie.mpaa_rating, rates.rating AS rate, released_on.release_date AS release_date, studio.name AS studio_name, genre.genre_name AS genre_name " +
+        String sql = "SELECT DISTINCT movie.title, cast_member.first_name AS cast_first, cast_member.last_name AS cast_last, director.first_name AS director_first, director.last_name AS director_last, " +
+                     "movie.length, movie.mpaa_rating, rates.rating AS rate, released_on.release_date AS release_date, studio.name AS studio_name, genre.genre_name AS genre_name " +
                      "FROM movie " +
                      "LEFT JOIN casts " + 
                      "ON movie.movie_id = casts.movie_id " + 
@@ -477,12 +479,13 @@ public class Database {
 
     // Function to search movies by cast
     public static void searchMovieByCast() {
-        System.out.print("Enter Cast Member Name: ");
+        System.out.print("Enter Cast Member Full Name: ");
         String castName = scanner.nextLine();
         String[] nameArray = castName.split(" ");
         String first = nameArray[0];
         String last = nameArray[1];
-        String sql = "SELECT DISTINCT movie.title, cast_member.first_name AS cast_first, cast_member.last_name AS cast_last, director.first_name AS director_first, director.last_name AS director_last, movie.length, movie.mpaa_rating, rates.rating AS rate, released_on.release_date AS release_date, studio.name AS studio_name, genre.genre_name AS genre_name " +
+        String sql = "SELECT DISTINCT movie.title, cast_member.first_name AS cast_first, cast_member.last_name AS cast_last, director.first_name AS director_first, director.last_name AS director_last, " +
+                     "movie.length, movie.mpaa_rating, rates.rating AS rate, released_on.release_date AS release_date, studio.name AS studio_name, genre.genre_name AS genre_name " +
                      "FROM movie " +
                      "LEFT JOIN casts " + 
                      "ON movie.movie_id = casts.movie_id " + 
@@ -555,9 +558,10 @@ public class Database {
 
     // Function to search movies by studio
     public static void searchMovieByStudio() {
-        System.out.print("Enter Studio Name: ");
+        System.out.print("Enter Studio Full Name: ");
         String studio = scanner.nextLine();
-        String sql = "SELECT DISTINCT movie.title, cast_member.first_name AS cast_first, cast_member.last_name AS cast_last, director.first_name AS director_first, director.last_name AS director_last, movie.length, movie.mpaa_rating, rates.rating AS rate, released_on.release_date AS release_date, studio.name AS studio_name, genre.genre_name AS genre_name " +
+        String sql = "SELECT DISTINCT movie.title, cast_member.first_name AS cast_first, cast_member.last_name AS cast_last, director.first_name AS director_first, director.last_name AS director_last, " +
+                     "movie.length, movie.mpaa_rating, rates.rating AS rate, released_on.release_date AS release_date, studio.name AS studio_name, genre.genre_name AS genre_name " +
                      "FROM movie " +
                      "LEFT JOIN casts " + 
                      "ON movie.movie_id = casts.movie_id " + 
@@ -631,7 +635,8 @@ public class Database {
     public static void searchMovieByGenre() {
         System.out.print("Enter Movie Genre: ");
         String genre = scanner.nextLine();
-        String sql = "SELECT DISTINCT movie.title, cast_member.first_name AS cast_first, cast_member.last_name AS cast_last, director.first_name AS director_first, director.last_name AS director_last, movie.length, movie.mpaa_rating, rates.rating AS rate, released_on.release_date AS release_date, studio.name AS studio_name, genre.genre_name AS genre_name " +
+        String sql = "SELECT DISTINCT movie.title, cast_member.first_name AS cast_first, cast_member.last_name AS cast_last, director.first_name AS director_first, director.last_name AS director_last, " +
+                     "movie.length, movie.mpaa_rating, rates.rating AS rate, released_on.release_date AS release_date, studio.name AS studio_name, genre.genre_name AS genre_name " +
                      "FROM movie " +
                      "LEFT JOIN casts " + 
                      "ON movie.movie_id = casts.movie_id " + 
@@ -951,7 +956,7 @@ public class Database {
     public static void removeMovies() {
         System.out.print("Enter Collection Name To Remove Movies From: ");
         String collectionName = scanner.nextLine();
-        System.out.print("Enter Movie Name: ");
+        System.out.print("Enter Movie Name to Remove: ");
         String movieName = scanner.nextLine();
         int collectionID = -1;
         int movieID = -1;
@@ -1043,7 +1048,7 @@ public class Database {
     public static void rateMovie() {
         System.out.print("Enter Movie Name: ");
         String movieName = scanner.nextLine();
-        System.out.print("Enter Rating: ");
+        System.out.print("Enter Rating (0.0 to 5.0): ");
         double rating = scanner.nextDouble();
         System.out.print("Recommend? (Yes/No): ");
         String rec = scanner.nextLine();
