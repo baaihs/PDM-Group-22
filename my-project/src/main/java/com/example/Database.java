@@ -574,7 +574,12 @@ public class Database {
     }
 
     public static void contributeTo() {
-
+        System.out.println("Enter Collection Name: ");
+        String collectionName = scanner.nextLine();
+        System.out.println("Enter Collection ID: ");
+        String collectionID = scanner.nextLine();
+        System.out.println("Enter Collection Owner's Username: ");
+        String ownerUsername = scanner.nextLine();
     }
 
     public static void removeMovies() {
