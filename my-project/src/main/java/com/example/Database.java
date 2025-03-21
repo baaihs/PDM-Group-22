@@ -20,7 +20,7 @@ public class Database {
 
     public static void main(String[] args) throws SQLException {
 
-        int lport = 15432;
+        int lport = 8083;
         String rhost = "starbug.cs.rit.edu";
         int rport = 5432;
         String user = "YOUR_CS_USERNAME"; //change to your username
@@ -484,7 +484,7 @@ public class Database {
                 while(rs.next()) {
                     System.out.print(rs.getString("collection_name") + ", ");
                 }
-                System.out.println();
+                System.out.println("\n");
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -737,7 +737,7 @@ public class Database {
                 while(rs.next()) {
                     System.out.print(rs.getString("collection_name") + ", ");
                 }
-                System.out.println();
+                System.out.println("\n");
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -762,10 +762,12 @@ public class Database {
 
         ArrayList<Integer> movieArray = new ArrayList<Integer>();
         ArrayList<Time> movieLengthArray = new ArrayList<Time>();
-        String getMoviesSQL = "SELECT movie_id, length " +
-                     "FROM consists_of " +
-                     "WHERE collection_id = ? AND owner_username = ?";
-        try (PreparedStatement pstmt = conn.prepareStatement(getMoviesSQL)) {
+
+        String getMovieLengthSQL = "SELECT m.movie_id, m.length " +
+                     "FROM consists_of c " +
+                     "JOIN movie m ON c.movie_id = m.movie_id " +
+                     "WHERE c.collection_id = ? AND c.owner_username = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(getMovieLengthSQL)) {
             pstmt.setInt(1, collectionID);
             pstmt.setString(2, username);
             try (ResultSet rs = pstmt.executeQuery()) {
