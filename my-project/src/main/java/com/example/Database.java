@@ -124,8 +124,10 @@ public class Database {
                             switch (accountChoice) {
                                 case 1:
                                     addMovies();
+                                    break;
                                 case 2:
                                     contributeTo();
+                                    break;
                             }
                             break;
                         case 9:
@@ -1028,28 +1030,31 @@ public class Database {
                 if (rs.next()) {
                     collectionID = rs.getInt("collection_id");
                 }
+                System.out.println(collectionID);
             }
         } catch (SQLException e) {
             e.printStackTrace();
             return;
         }
-        String movieSql = "SELECT movie_id FROM movies WHERE title = ?";
+        String movieSql = "SELECT movie_id FROM movie WHERE title = ?";
         try (PreparedStatement pstmt = conn.prepareStatement(movieSql)) {
             pstmt.setString(1, movieName);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
                     movieID = rs.getInt("movie_id");
                 }
+                System.out.println(movieID);
             }
         } catch (SQLException e) {
             e.printStackTrace();
             return;
         }
-        String deleteSql = "DELETE FROM collection_name WHERE movie_id = ? AND collection_id = ?";
+        String deleteSql = "DELETE FROM consists_of WHERE movie_id = ? AND collection_id = ?";
         try (PreparedStatement pstmt = conn.prepareStatement(deleteSql)) {
             pstmt.setInt(1, movieID);
             pstmt.setInt(2, collectionID);
             int rowsDeleted = pstmt.executeUpdate();
+            System.out.println("executed");
             if (rowsDeleted > 0) {
                 System.out.println("MOVIE '" + movieName + "' DELETED SUCCESSFULLY FROM COLLECTION '" + collectionName);
             }
