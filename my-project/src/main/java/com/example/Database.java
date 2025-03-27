@@ -1,18 +1,25 @@
 package com.example;
 
-import com.jcraft.jsch.JSch;
-import com.jcraft.jsch.Session;
-
-import java.util.Properties;
-import java.util.Scanner;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.Date;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Properties;
+import java.util.Scanner;
+
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.Session;
 
 public class Database {
     private static String username;
@@ -155,6 +162,9 @@ public class Database {
                             unfollowUser();
                             break;
                         case 17:
+                            displayProfile();
+                            break;
+                        case 18:
                             choice = 0;
                             accountChoice = 0;
                             break;
@@ -1347,6 +1357,32 @@ public class Database {
         } 
     }
 
+    // Function to display the number of collection a user has
+    public static void displayProfile() {
+         String sql = "SELECT COUNT(*) AS count " + 
+                     "LEFT JOIN consists_of " + 
+                     "ON collection.collection_id = consists_of.collection_id " +
+                     "LEFT JOIN movie " +
+                     "ON consists_of.movie_id = movie.movie_id " +
+                     "WHERE collection.owner_username = ? " +
+                     "GROUP BY collection.collection_id, collection.collection_name, collection.quantity " +
+                     "ORDER BY collection.collection_name ASC";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                System.out.printf("%-30s %-10s %-10s%n", "Collection Name", "Quantity", "Total Length");
+                System.out.println("--------------------------------------------------------------");
+                while (rs.next()) {
+                    printLines();
+                    System.out.printf("%-30s %-10s %-10s%n", rs.getString("collection_name"), rs.getInt("quantity"), rs.getTime("total_length"));
+                }
+            }
+        }
+        catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     // Function to display the initial commands upon running
     public static void displayInitialCommands() {
         printLines();
@@ -1377,7 +1413,8 @@ public class Database {
         System.out.println("14. Watch Collection");
         System.out.println("15. Follow User");
         System.out.println("16. Unfollow User");
-        System.out.println("17. Exit");
+        System.out.println("17. Display Profile");
+        System.out.println("18. Exit");
         printLines();
         System.out.print("Enter Choice: ");
     }
