@@ -28,7 +28,7 @@ public class Database {
 
     public static void main(String[] args) throws SQLException {
 
-        int lport = 12289;
+        int lport = 14289;
         String rhost = "starbug.cs.rit.edu";
         int rport = 5432;
         String user = "YOUR_CS_USERNAME"; //change to your username
@@ -162,9 +162,27 @@ public class Database {
                             unfollowUser();
                             break;
                         case 17:
-                            displayProfile();
+                            displayCollectionCount();
                             break;
                         case 18:
+                            displayFollowerCount();
+                            break;
+                        case 19:
+                            displayFollowingCount();
+                            break;
+                        case 20:
+                            displayTop10();
+                            break;
+                        case 21:
+                            top20In90Days();
+                            break;
+                        case 22:
+                            top20AmongFollowers();
+                            break;
+                        case 23:
+                            top5OfTheMonth();
+                            break;
+                        case 24:
                             choice = 0;
                             accountChoice = 0;
                             break;
@@ -1358,27 +1376,150 @@ public class Database {
     }
 
     // Function to display the number of collection a user has
-    public static void displayProfile() {
-         String sql = "SELECT COUNT(*) AS count " + 
-                     "LEFT JOIN consists_of " + 
-                     "ON collection.collection_id = consists_of.collection_id " +
-                     "LEFT JOIN movie " +
-                     "ON consists_of.movie_id = movie.movie_id " +
-                     "WHERE collection.owner_username = ? " +
-                     "GROUP BY collection.collection_id, collection.collection_name, collection.quantity " +
-                     "ORDER BY collection.collection_name ASC";
+    public static void displayCollectionCount() {
+        String sql = "SELECT COUNT(*) AS count FROM collection WHERE collection.owner_username = ?";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, username);
             try (ResultSet rs = pstmt.executeQuery()) {
-                System.out.printf("%-30s %-10s %-10s%n", "Collection Name", "Quantity", "Total Length");
-                System.out.println("--------------------------------------------------------------");
-                while (rs.next()) {
-                    printLines();
-                    System.out.printf("%-30s %-10s %-10s%n", rs.getString("collection_name"), rs.getInt("quantity"), rs.getTime("total_length"));
+                rs.next();
+                int count = rs.getInt("count");
+                if (count == 1 ) {
+                    System.out.println(username + " has " + count + " collection.");
+                }
+                else if (count == 0) {
+                    System.out.println("No collections found.");
+                }
+                else {
+                    System.out.println(username + " has " + count + " collections.");
                 }
             }
         }
         catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void displayFollowerCount() {
+        String sql = "SELECT COUNT(*) AS count FROM follows WHERE followee = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                rs.next();
+                int count = rs.getInt("count");
+                if (count == 1) {
+                    System.out.println(username + " has " + count + " follower.");
+                }
+                else if (count == 0) {
+                    System.out.println("No followers found.");
+                }
+                else {
+                    System.out.println(username + " has " + count + " followers.");
+                }
+            }
+        }
+        catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    public static void displayFollowingCount() {
+        String sql = "SELECT COUNT(*) AS count FROM follows WHERE follower = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                rs.next();
+                int count = rs.getInt("count");
+                if (count == 1) {
+                    System.out.println(username + " is following " + count + " user.");
+                }
+                else if (count == 0) {
+                    System.out.println("No user followed.");
+                }
+                else {
+                    System.out.println(username + " is following " + count + " users.");
+                }
+            }
+        }
+        catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void displayTop10() {
+        String sql = "SELECT movie.title AS title, movie.length AS length, rates.rating AS rate FROM movie " +
+                     "LEFT JOIN rates " +
+                     "ON movie.movie_id = rates.movie_id " +
+                     "WHERE rates.username = ? " +
+                     "ORDER BY rating DESC " +
+                     "LIMIT 10";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                System.out.printf("%-43s %-15s %-15s %n", "title", "length", "rating");
+                printLineTables();
+                int count = 1;
+                while (rs.next()) {
+                    BigDecimal ratingBD = (BigDecimal) rs.getObject("rate");
+                    Double rating = (ratingBD != null) ? ratingBD.doubleValue() : null;
+                    if (count == 10) {
+                        System.out.printf(count++ + ". %-39s %-15s %-15s %n", rs.getString("title"), rs.getTime("length"), (rating != null ? rating.toString() : "NULL"));
+                    }
+                    else {
+                        System.out.printf(count++ + ". %-40s %-15s %-15s %n", rs.getString("title"), rs.getTime("length"), (rating != null ? rating.toString() : "NULL"));
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void top20In90Days() {
+        String sql = "SELECT movie.title AS title, movie.length AS length, movie.online_rating AS rating, released_on.release_date AS release_date FROM movie " +
+                     "LEFT JOIN released_on " +
+                     "ON movie.movie_id = released_on.movie_id " +
+                     "WHERE released_on.release_date >= CURRENT_DATE - INTERVAL '90 DAY' " +
+                     "ORDER BY movie.online_rating DESC " +
+                     "LIMIT 20";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                System.out.printf("%-43s %-15s %-15s %-15s%n", "title", "length", "rating", "release_date");
+                printLineTables();
+                int count = 1;
+                while (rs.next()) {
+                    if (count >= 10) {
+                        System.out.printf(count++ + ". %-39s %-15s %-15s %-15s%n", rs.getString("title"), rs.getTime("length"), rs.getDouble("rating"), rs.getDate("release_date"));
+                    }
+                    else {
+                        System.out.printf(count++ + ". %-40s %-15s %-15s %-15s%n", rs.getString("title"), rs.getTime("length"), rs.getDouble("rating"), rs.getDate("release_date"));
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void top20AmongFollowers() {
+        
+    }
+
+    public static void top5OfTheMonth() {
+        String sql = "SELECT movie.title AS title, movie.length AS length, movie.online_rating AS rating, released_on.release_date AS release_date FROM movie " +
+                     "LEFT JOIN released_on " +
+                     "ON movie.movie_id = released_on.movie_id " +
+                     "WHERE released_on.release_date >= DATE_TRUNC('month', CURRENT_DATE) " +
+                     "ORDER BY movie.online_rating DESC " +
+                     "LIMIT 5";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                System.out.printf("%-40s %-15s %-15s %-15s%n", "title", "length", "rating", "release_date");
+                printLineTables();
+                while (rs.next()) {
+                    System.out.printf("%-40s %-15s %-15s %-15s%n", rs.getString("title"), rs.getTime("length"), rs.getDouble("rating"), rs.getDate("release_date"));
+                }
+            }
+        } catch (SQLException e) {
             e.printStackTrace();
         }
     }
@@ -1413,8 +1554,14 @@ public class Database {
         System.out.println("14. Watch Collection");
         System.out.println("15. Follow User");
         System.out.println("16. Unfollow User");
-        System.out.println("17. Display Profile");
-        System.out.println("18. Exit");
+        System.out.println("17. Display Collection Count");
+        System.out.println("18. Display Follower Count");
+        System.out.println("19. Display Following Count");
+        System.out.println("20. Display Top 10 Movies");
+        System.out.println("21. Display Top 20 Movies In The Last 90 Days");
+        System.out.println("22. Display Top 20 Movies Among Followers");
+        System.out.println("23. Display Top 5 Movies Of The Month");
+        System.out.println("24. Exit");
         printLines();
         System.out.print("Enter Choice: ");
     }
