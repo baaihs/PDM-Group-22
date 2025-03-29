@@ -1475,23 +1475,26 @@ public class Database {
     }
 
     public static void top20In90Days() {
-        String sql = "SELECT movie.title AS title, movie.length AS length, movie.online_rating AS rating, released_on.release_date AS release_date FROM movie " +
+        String sql = "SELECT movie.title AS title, movie.length AS length, COUNT(watches.movie_id) AS watches, released_on.release_date AS release_date FROM movie " +
                      "LEFT JOIN released_on " +
                      "ON movie.movie_id = released_on.movie_id " +
+                     "LEFT JOIN watches " +
+                     "ON movie.movie_id = watches.movie_id " +
                      "WHERE released_on.release_date >= CURRENT_DATE - INTERVAL '90 DAY' " +
-                     "ORDER BY movie.online_rating DESC " +
+                     "GROUP BY movie.title, movie.length, watches.movie_id, released_on.release_date " +
+                     "ORDER BY watches DESC " +
                      "LIMIT 20";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             try (ResultSet rs = pstmt.executeQuery()) {
-                System.out.printf("%-43s %-15s %-15s %-15s%n", "title", "length", "rating", "release_date");
+                System.out.printf("%-43s %-15s %-15s %-15s%n", "title", "length", "watches", "release_date");
                 printLineTables();
                 int count = 1;
                 while (rs.next()) {
                     if (count >= 10) {
-                        System.out.printf(count++ + ". %-39s %-15s %-15s %-15s%n", rs.getString("title"), rs.getTime("length"), rs.getDouble("rating"), rs.getDate("release_date"));
+                        System.out.printf(count++ + ". %-39s %-15s %-15s %-15s%n", rs.getString("title"), rs.getTime("length"), rs.getInt("watches"), rs.getDate("release_date"));
                     }
                     else {
-                        System.out.printf(count++ + ". %-40s %-15s %-15s %-15s%n", rs.getString("title"), rs.getTime("length"), rs.getDouble("rating"), rs.getDate("release_date"));
+                        System.out.printf(count++ + ". %-40s %-15s %-15s %-15s%n", rs.getString("title"), rs.getTime("length"), rs.getInt("watches"), rs.getDate("release_date"));
                     }
                 }
             }
@@ -1501,7 +1504,35 @@ public class Database {
     }
 
     public static void top20AmongFollowers() {
-        
+        String sql = "SELECT movie.title AS title, movie.length AS length, COUNT(watches.movie_id) AS watches, follows.follower AS follower FROM movie " +
+                     "LEFT JOIN released_on " +
+                     "ON movie.movie_id = released_on.movie_id " +
+                     "LEFT JOIN watches " +
+                     "ON movie.movie_id = watches.movie_id " +
+                     "LEFT JOIN follows " +
+                     "ON watches.username = follows.follower " +
+                     "WHERE follows.followee = ?" +
+                     "GROUP BY movie.title, movie.length, watches.movie_id, follows.follower " +
+                     "ORDER BY watches DESC " +
+                     "LIMIT 20";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                System.out.printf("%-43s %-15s %-15s %-15s%n", "title", "length", "watches", "follower");
+                printLineTables();
+                int count = 1;
+                while (rs.next()) {
+                    if (count >= 10) {
+                        System.out.printf(count++ + ". %-39s %-15s %-15s %-15s%n", rs.getString("title"), rs.getTime("length"), rs.getInt("watches"), rs.getString("follower"));
+                    }
+                    else {
+                        System.out.printf(count++ + ". %-40s %-15s %-15s %-15s%n", rs.getString("title"), rs.getTime("length"), rs.getInt("watches"), rs.getString("follower"));
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public static void top5OfTheMonth() {
@@ -1515,8 +1546,9 @@ public class Database {
             try (ResultSet rs = pstmt.executeQuery()) {
                 System.out.printf("%-40s %-15s %-15s %-15s%n", "title", "length", "rating", "release_date");
                 printLineTables();
+                int count = 1;
                 while (rs.next()) {
-                    System.out.printf("%-40s %-15s %-15s %-15s%n", rs.getString("title"), rs.getTime("length"), rs.getDouble("rating"), rs.getDate("release_date"));
+                    System.out.printf(count++ + ". %-39s %-15s %-15s %-15s%n", rs.getString("title"), rs.getTime("length"), rs.getDouble("rating"), rs.getDate("release_date"));
                 }
             }
         } catch (SQLException e) {
