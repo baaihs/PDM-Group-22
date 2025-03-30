@@ -4,6 +4,10 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.SecureRandom;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.DriverManager;
@@ -183,11 +187,27 @@ public class Database {
                             top5OfTheMonth();
                             break;
                         case 24:
+                            displayRecommendationOptions();
+
+                            accountChoice = scanner.nextInt();
+                            scanner.nextLine();
+                            spaces();
+                            
+                            switch (accountChoice) {
+                                case 1:
+                                    displayRecommendationBasedOnPlayHistory();
+                                    break;
+                                case 2:
+                                    displayRecommendationBasedOnOthers();
+                                    break;
+                            }
+                            break;
+                        case 25:
                             choice = 0;
                             accountChoice = 0;
                             break;
                         default:
-                            System.out.println("Invalid Choice (Enter A Number Between 1-17)");
+                            System.out.println("Invalid Choice (Enter A Number Between 1-25)");
                     }
                     enterToContinue();
                 }
@@ -209,12 +229,16 @@ public class Database {
     }
     
     // Function to create a new user account
-    public static void createUser() {
+    public static void createUser() throws NoSuchAlgorithmException, NoSuchProviderException {
         try {
             System.out.print("Enter Username: ");
             String inputtedUsername = scanner.nextLine();
             System.out.print("Enter Password: ");
             String password = scanner.nextLine();
+            // String salt = generateSalt();
+            // String generatedPassword = generateHashedPassword(password, salt);
+
+
             System.out.print("Enter First Name: ");
             String firstName = scanner.nextLine();
             System.out.print("Enter Last Name: ");
@@ -264,6 +288,41 @@ public class Database {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    public static String generateHashedPassword(String password, String salt) {
+        String generatedPassword = null;
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            md.update(salt.getBytes());
+            
+            byte[] bytes = md.digest(password.getBytes());
+            StringBuilder sb = new StringBuilder();
+
+            for(int i = 0; i < bytes.length; i++) {
+                sb.append(Integer.toString((bytes[i] & 0xff) + 0x100, 16).substring(1));
+            }
+
+            generatedPassword = sb.toString();
+        }
+        catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        return generatedPassword;
+    }
+
+    public static String generateSalt() throws NoSuchAlgorithmException, NoSuchProviderException {
+        SecureRandom random = SecureRandom.getInstance("SHA1PRNG", "SUN");
+        byte[] salt = new byte[16];
+        random.nextBytes(salt);
+        return salt.toString();
+    }
+
+    public static boolean verifyPassword(String password, String salt, String hashedPassword) {
+        if(generateHashedPassword(password, salt).equals(hashedPassword)) {
+            return true;
+        }
+        return false;
     }
 
     // Function to access an account through login
@@ -1556,6 +1615,81 @@ public class Database {
         }
     }
 
+    public static void displayRecommendationBasedOnPlayHistory() {
+        String sql = "SELECT DISTINCT movie.title AS title, movie.length AS length, movie.online_rating AS rating, released_on.release_date AS release_date " +
+                     "FROM movie " +
+                     "JOIN released_on ON movie.movie_id = released_on.movie_id " +
+                     "JOIN watches ON watches.username = ? " +
+                     "JOIN movie m2 ON watches.movie_id = m2.movie_id " +
+                     "LEFT JOIN casts c ON c.movie_id = m2.movie_id " +
+                     "LEFT JOIN casts c2 ON c.member_id = c2.member_id AND c2.movie_id = movie.movie_id " +
+                     "WHERE movie.movie_id NOT IN (SELECT movie_id FROM watches WHERE username = ?) " +
+                     "AND ( " +
+                        "movie.genre = m2.genre " +
+                        "OR movie.online_rating >= (SELECT AVG(m3.online_rating) FROM movie m3 " +
+                                                "JOIN watches w2 ON m3.movie_id = w2.movie_id " +
+                                                "WHERE w2.username = ?) " +
+                        "OR c2.movie_id IS NOT NULL " +
+                     ") " +
+                     "ORDER BY movie.online_rating DESC, released_on.release_date DESC " + 
+                     "LIMIT 10";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            pstmt.setString(2, username);
+            pstmt.setString(3, username);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                System.out.printf("%-40s %-15s %-15s %-15s%n", "title", "length", "rating", "release_date");
+                printLineTables();
+                int count = 1;
+                while (rs.next()) {
+                    System.out.printf(count++ + ". %-39s %-15s %-15s %-15s%n", rs.getString("title"), rs.getTime("length"), rs.getDouble("rating"), rs.getDate("release_date"));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void displayRecommendationBasedOnOthers() {
+        String sql = "WITH similar_users AS ( " +
+                        "SELECT DISTINCT w2.username " +
+                        "FROM watches w1 " +
+                        "JOIN watches w2 ON w1.movie_id = w2.movie_id " +
+                        "WHERE w1.username = ? " +
+                        "AND w2.username <> ? " + //excludes the original user
+                     "), " +
+
+                     "recommended_movies AS ( " +
+                        "SELECT m.title, m.length, m.online_rating, r.release_date, COUNT(*) AS popularity " +
+                        "FROM watches w " +
+                        "JOIN movie m ON w.movie_id = m.movie_id " +
+                        "JOIN released_on r ON m.movie_id = r.movie_id " +
+                        "WHERE w.username IN (SELECT username FROM similar_users) " +
+                        "AND m.movie_id NOT IN (SELECT movie_id FROM watches WHERE username = ?) " +
+                        "GROUP BY m.movie_id, m.title, m.length, m.online_rating, r.release_date " +
+                     ") " +
+
+                     "SELECT title, length, online_rating AS rating, release_date " +
+                     "FROM recommended_movies " +
+                     "ORDER BY popularity DESC, online_rating DESC, release_date DESC " +
+                     "LIMIT 10; ";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            pstmt.setString(2, username);
+            pstmt.setString(3, username);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                System.out.printf("%-40s %-15s %-15s %-15s%n", "title", "length", "rating", "release_date");
+                printLineTables();
+                int count = 1;
+                while (rs.next()) {
+                    System.out.printf(count++ + ". %-39s %-15s %-15s %-15s%n", rs.getString("title"), rs.getTime("length"), rs.getDouble("rating"), rs.getDate("release_date"));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     // Function to display the initial commands upon running
     public static void displayInitialCommands() {
         printLines();
@@ -1620,6 +1754,11 @@ public class Database {
     public static void displayAscDescOptions() {
         System.out.println("1. Ascending");
         System.out.println("2. Descending");
+    }
+
+    public static void displayRecommendationOptions() {
+        System.out.println("1. Recommendations Based on Your Play History");
+        System.out.println("2. Recommendations Based on the Play History of Similar Users");
     }
 
     // Function to display lines for formatting
