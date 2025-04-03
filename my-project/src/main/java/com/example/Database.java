@@ -235,7 +235,6 @@ public class Database {
             String inputtedUsername = scanner.nextLine();
             System.out.print("Enter Password: ");
             String password = scanner.nextLine();
-            // String salt = generateSalt();
             // String generatedPassword = generateHashedPassword(password, salt);
 
 
@@ -290,17 +289,18 @@ public class Database {
         }
     }
 
-    public static String generateHashedPassword(String password, String salt) {
+    public static String generateHashedPassword(String password, String username) {
         String generatedPassword = null;
         try {
-            MessageDigest md = MessageDigest.getInstance("MD5");
-            md.update(salt.getBytes());
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
             
-            byte[] bytes = md.digest(password.getBytes());
-            StringBuilder sb = new StringBuilder();
+            String saltedPassword = password + username;
+            
+            byte[] bytes = md.digest(saltedPassword.getBytes());
 
-            for(int i = 0; i < bytes.length; i++) {
-                sb.append(Integer.toString((bytes[i] & 0xff) + 0x100, 16).substring(1));
+            StringBuilder sb = new StringBuilder();
+            for (byte b: bytes) {
+                sb.append(String.format("%02x", b));
             }
 
             generatedPassword = sb.toString();
@@ -311,15 +311,8 @@ public class Database {
         return generatedPassword;
     }
 
-    public static String generateSalt() throws NoSuchAlgorithmException, NoSuchProviderException {
-        SecureRandom random = SecureRandom.getInstance("SHA1PRNG", "SUN");
-        byte[] salt = new byte[16];
-        random.nextBytes(salt);
-        return salt.toString();
-    }
-
-    public static boolean verifyPassword(String password, String salt, String hashedPassword) {
-        if(generateHashedPassword(password, salt).equals(hashedPassword)) {
+    public static boolean verifyPassword(String password, String username, String hashedPassword) {
+        if(generateHashedPassword(password, username).equals(hashedPassword)) {
             return true;
         }
         return false;
