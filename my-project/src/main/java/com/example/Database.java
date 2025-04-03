@@ -235,7 +235,7 @@ public class Database {
             String inputtedUsername = scanner.nextLine();
             System.out.print("Enter Password: ");
             String password = scanner.nextLine();
-            // String generatedPassword = generateHashedPassword(password, salt);
+            String hashedPassword = generateHashedPassword(password, inputtedUsername);
 
 
             System.out.print("Enter First Name: ");
@@ -260,7 +260,7 @@ public class Database {
                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
             try (PreparedStatement pstmt = conn.prepareStatement(createAccount)) {
                 pstmt.setString(1, inputtedUsername);
-                pstmt.setString(2, password);
+                pstmt.setString(2, hashedPassword);
                 pstmt.setString(3, firstName);
                 pstmt.setString(4, lastName);
                 pstmt.setString(5, gender);
