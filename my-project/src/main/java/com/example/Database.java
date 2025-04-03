@@ -1727,7 +1727,8 @@ public class Database {
         System.out.println("21. Display Top 20 Movies In The Last 90 Days");
         System.out.println("22. Display Top 20 Movies Among Followers");
         System.out.println("23. Display Top 5 Movies Of The Month");
-        System.out.println("24. Exit");
+        System.out.println("24. Display Movie Recommendations");
+        System.out.println("25. Exit");
         printLines();
         System.out.print("Enter Choice: ");
     }
