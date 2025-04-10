@@ -91,7 +91,10 @@ public class Database {
                 if (choice == 1) {
                     createUser();
                 } else if (choice == 2) {
-                    accessAccount();
+                    boolean loggedIn = accessAccount();
+                    if (!loggedIn) {
+                        choice = 0;
+                    }
                 } else if (choice == 3) {
                     System.out.println("Exiting.");
                 }
@@ -319,7 +322,7 @@ public class Database {
     }
 
     // Function to access an account through login
-    public static void accessAccount() {
+    public static boolean accessAccount() {
         try {
             System.out.print("Enter Username: ");
             String usernameInput = scanner.nextLine();
@@ -340,6 +343,7 @@ public class Database {
                         System.out.println("Login Successful. Welcome, " + username + "!");
                     } else {
                         System.out.println("Invalid Username/Password.");
+                        return false;
                     }
                 }
             }
@@ -351,11 +355,12 @@ public class Database {
                 pstmt.setString(2, username);
                 pstmt.executeUpdate();
             }
-
-
+            
         } catch (SQLException e) {
             e.printStackTrace();
         }
+
+        return true;
     }
 
     // Function to create a collection
