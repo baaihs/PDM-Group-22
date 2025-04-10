@@ -74,6 +74,7 @@ public class Database {
             // Prompt the user to create an account or log into an existing account
             Scanner scanner = new Scanner(System.in);
             int choice = 0;
+            boolean loggedIn = false;
             while (choice != 3) {
                 spaces();
                 displayInitialCommands();
@@ -91,7 +92,7 @@ public class Database {
                 if (choice == 1) {
                     createUser();
                 } else if (choice == 2) {
-                    boolean loggedIn = accessAccount();
+                    loggedIn = accessAccount();
                     if (!loggedIn) {
                         choice = 0;
                     }
@@ -208,6 +209,7 @@ public class Database {
                         case 25:
                             choice = 0;
                             accountChoice = 0;
+                            loggedIn = false;
                             break;
                         default:
                             System.out.println("Invalid Choice (Enter A Number Between 1-25)");
