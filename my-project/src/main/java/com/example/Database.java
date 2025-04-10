@@ -326,10 +326,13 @@ public class Database {
             System.out.print("Enter Password: ");
             String password = scanner.nextLine();
 
+            String hashedPassword = generateHashedPassword(password, usernameInput);
+            // boolean correctPassword = verifyPassword(password, usernameInput, hashedPassword);
+
             String sql = "SELECT * FROM users WHERE username = ? AND password = ?";
             try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setString(1, usernameInput);
-                pstmt.setString(2, password);
+                pstmt.setString(2, hashedPassword);
                 try (ResultSet rs = pstmt.executeQuery()) {
                     System.out.println();
                     if (rs.next()) {
