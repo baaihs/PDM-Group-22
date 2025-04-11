@@ -203,6 +203,12 @@ public class Database {
                             }
                             break;
                         case 25:
+                            hypothesis1();
+                            break;
+                        case 26:
+                            hypothesis2();
+                            break;
+                        case 27:
                             choice = 0;
                             accountChoice = 0;
                             break;
@@ -1721,7 +1727,9 @@ public class Database {
         System.out.println("22. Display Top 20 Movies Among Followers");
         System.out.println("23. Display Top 5 Movies Of The Month");
         System.out.println("24. Display Movie Recommendations");
-        System.out.println("25. Exit");
+        System.out.println("25. Hypothesis 1: Enjoy Most");
+        System.out.println("26. Hypothesis 2: 1990s vs 2020s");
+        System.out.println("27. Exit");
         printLines();
         System.out.print("Enter Choice: ");
     }
@@ -1775,6 +1783,136 @@ public class Database {
     public static void spaces() {
         for (int i = 0; i < 50; i++) {
             System.out.println();
+        }
+    }
+
+    public static void hypothesis1() {
+        String sql = "SELECT genre.genre_name AS genre, AVG(movie.online_rating) as avg_rating_genre FROM movie " +
+                     "LEFT JOIN has_genre " + 
+                     "ON movie.movie_id = has_genre.movie_id " +
+                     "LEFT JOIN genre " +
+                     "ON has_genre.genre_id = genre.genre_id " +
+                     "GROUP BY genre.genre_name " + 
+                     "ORDER BY avg_rating_genre DESC ";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                boolean getFirst = false;
+                String enjoyGenre = "";
+                System.out.printf("%-40s %-15s %n", "genre", "avg_rating_genre");
+                printLineTables();
+                while (rs.next()) {
+                    System.out.printf("%-40s %-15s%n", rs.getString("genre"), rs.getDouble("avg_rating_genre"));
+                    if (!getFirst) {
+                        getFirst = true;
+                        enjoyGenre = rs.getString("genre");
+                    }
+                }
+                printLineTables();
+                System.out.println("ON AVERAGE, USERS ENJOY " + enjoyGenre + " THE MOST");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void hypothesis2() {
+        double avgRating1990s = 0.0;
+        double avgRating2020s = 0.0;
+        double avgRating1990sGenre = 0.0;
+        double avgRating2020sGenre = 0.0;
+        String sql = "SELECT AVG(movie.online_rating) as avg_rating FROM movie " +
+                     "LEFT JOIN released_on " +
+                     "ON movie.movie_id = released_on.movie_id " +
+                     "WHERE released_on.release_date >= '1990-01-01' AND released_on.release_date < '2000-01-01' ";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                rs.next();
+                avgRating1990s = rs.getDouble("avg_rating");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        sql = "SELECT AVG(movie.online_rating) as avg_rating FROM movie " +
+                     "LEFT JOIN released_on " +
+                     "ON movie.movie_id = released_on.movie_id " +
+                     "WHERE released_on.release_date >= '2020-01-01' AND released_on.release_date < '2026-01-01' ";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                rs.next();
+                avgRating2020s = rs.getDouble("avg_rating");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        sql = "SELECT AVG(movie.online_rating) as avg_rating FROM movie " +
+              "LEFT JOIN released_on " +
+              "ON movie.movie_id = released_on.movie_id " +
+              "LEFT JOIN has_genre " + 
+              "ON movie.movie_id = has_genre.movie_id " +
+              "LEFT JOIN genre " +
+              "ON has_genre.genre_id = genre.genre_id " +
+              "WHERE (released_on.release_date >= '1990-01-01' AND released_on.release_date < '2000-01-01') " +
+              "AND (genre.genre_name = 'Action' OR genre.genre_name = 'Sci-Fi')";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                rs.next();
+                avgRating1990sGenre = rs.getDouble("avg_rating");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        sql = "SELECT AVG(movie.online_rating) as avg_rating FROM movie " +
+              "LEFT JOIN released_on " +
+              "ON movie.movie_id = released_on.movie_id " +
+              "LEFT JOIN has_genre " + 
+              "ON movie.movie_id = has_genre.movie_id " +
+              "LEFT JOIN genre " +
+              "ON has_genre.genre_id = genre.genre_id " +
+              "WHERE (released_on.release_date >= '2020-01-01' AND released_on.release_date < '2026-01-01') " + 
+              "AND (genre.genre_name = 'Action' OR genre.genre_name = 'Sci-Fi')";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                rs.next();
+                avgRating2020sGenre = rs.getDouble("avg_rating");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        System.out.println("1990s Avg Rating: " + avgRating1990s);
+        System.out.println("2020s Avg Rating: " + avgRating2020s);
+        System.out.println("1990s Avg Rating (Action/Sci-Fi): " + avgRating1990sGenre);
+        System.out.println("2020s Avg Rating (Action/Sci-Fi): " + avgRating2020sGenre);
+
+        System.out.println();
+        if (avgRating1990s > avgRating2020s) {
+            System.out.println("1990s movies are rated higher than 2020s movies.");
+        } else if (avgRating1990s < avgRating2020s) {
+            System.out.println("2020s movies are rated higher than 1990s movies.");
+        } else {
+            System.out.println("Both decades have the same average rating.");
+        }
+        if (Math.abs(avgRating1990s - avgRating2020s) > 0.5) {
+            System.out.println("The difference in average ratings is significant.");
+        } else {
+            System.out.println("The difference in average ratings is not significant.");
+        }
+
+        System.out.println();
+        if (avgRating1990sGenre > avgRating2020sGenre) {
+            System.out.println("1990s Action/Sci-Fi movies are rated higher than 2020s Action/Sci-Fi movies.");
+        } else if (avgRating1990sGenre < avgRating2020sGenre) {
+            System.out.println("2020s Action/Sci-Fi movies are rated higher than 1990s Action/Sci-Fi movies.");
+        } else {
+            System.out.println("Both decades have the same average rating for Action/Sci-Fi movies.");
+        }
+        if (Math.abs(avgRating1990s - avgRating2020s) > 0.5) {
+            System.out.println("The difference in average ratings is significant.");
+        } else {
+            System.out.println("The difference in average ratings is not significant.");
         }
     }
 }
