@@ -1856,15 +1856,15 @@ public class Database {
     public static void displayAccountCommands() {
         spaces();
         printLines();
-        System.out.println("1. Create Collection");
-        System.out.println("2. See Collection");
-        System.out.println("3. Search Movie by Name");
-        System.out.println("4. Search Movie by Release Date");
-        System.out.println("5. Search Movie by Cast");
-        System.out.println("6. Search Movie by Studio");
-        System.out.println("7. Search Movie by Genre");
-        System.out.println("8. Add Movie to Collection");
-        System.out.println("9. Remove Movie from Collection");
+        System.out.println("1.  Create Collection");
+        System.out.println("2.  See Collection");
+        System.out.println("3.  Search Movie by Name");
+        System.out.println("4.  Search Movie by Release Date");
+        System.out.println("5.  Search Movie by Cast");
+        System.out.println("6.  Search Movie by Studio");
+        System.out.println("7.  Search Movie by Genre");
+        System.out.println("8.  Add Movie to Collection");
+        System.out.println("9.  Remove Movie from Collection");
         System.out.println("10. Modify Collection Name");
         System.out.println("11. Delete Collection");
         System.out.println("12. Rate Movie");
