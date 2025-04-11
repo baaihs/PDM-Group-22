@@ -232,6 +232,41 @@ public class Database {
             }
         }
     }
+
+    public static void hashAllPasswords() {
+        String selectSql = "SELECT username, password FROM users";
+        String updateSql = "UPDATE users SET password = ? WHERE username = ?";
+        
+        try (
+            PreparedStatement selectStmt = conn.prepareStatement(selectSql);
+            PreparedStatement updateStmt = conn.prepareStatement(updateSql);
+            ResultSet rs = selectStmt.executeQuery()
+        ) {
+            int updatedCount = 0;
+            while (rs.next()) {
+                String username = rs.getString("username");
+                String plainPassword = rs.getString("password");
+    
+                // Check if password might already be hashed (optional but recommended)
+                if (plainPassword.length() == 64 && plainPassword.matches("[a-fA-F0-9]+")) {
+                    continue; // Skip already hashed passwords (SHA-256 is 64 hex characters)
+                }
+    
+                String hashedPassword = generateHashedPassword(plainPassword, username);
+    
+                updateStmt.setString(1, hashedPassword);
+                updateStmt.setString(2, username);
+                updateStmt.addBatch();
+    
+                updatedCount++;
+            }
+    
+            updateStmt.executeBatch();
+            System.out.println("Updated " + updatedCount + " password(s) to hashed values.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
     
     // Function to create a new user account
     public static void createUser() throws NoSuchAlgorithmException, NoSuchProviderException {
