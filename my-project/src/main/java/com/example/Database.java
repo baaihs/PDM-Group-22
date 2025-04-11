@@ -1653,74 +1653,182 @@ public class Database {
         }
     }
 
+    // Recommends movies that contians the genre of the user's most watched genre,
+    //  the online_rating of the movie is greater than the user's average rating their watched genre,
+    //  and contains a cast member that they watched the most
+    //  IF there aren't enough tables to show 10 recommendations, then it shows more movies with the same 
+    //  criteria as above, EXCLUDING the cast member requirement
     public static void displayRecommendationBasedOnPlayHistory() {
-        String sql = "SELECT DISTINCT movie.title AS title, movie.length AS length, movie.online_rating AS rating, released_on.release_date AS release_date " +
-                     "FROM movie " +
-                     "JOIN released_on ON movie.movie_id = released_on.movie_id " +
-                     "JOIN watches ON watches.username = ? " +
-                     "JOIN movie m2 ON watches.movie_id = m2.movie_id " +
-                     "LEFT JOIN casts c ON c.movie_id = m2.movie_id " +
-                     "LEFT JOIN casts c2 ON c.member_id = c2.member_id AND c2.movie_id = movie.movie_id " +
-                     "WHERE movie.movie_id NOT IN (SELECT movie_id FROM watches WHERE username = ?) " +
-                     "AND ( " +
-                        "movie.genre = m2.genre " +
-                        "OR movie.online_rating >= (SELECT AVG(m3.online_rating) FROM movie m3 " +
-                                                "JOIN watches w2 ON m3.movie_id = w2.movie_id " +
-                                                "WHERE w2.username = ?) " +
-                        "OR c2.movie_id IS NOT NULL " +
-                     ") " +
-                     "ORDER BY movie.online_rating DESC, released_on.release_date DESC " + 
-                     "LIMIT 10";
+        String sql = "WITH most_watched_genre AS (" + 
+                        "SELECT hg.genre_id AS genre " +
+                        "FROM has_genre hg " +
+                        "JOIN watches w ON hg.movie_id = w.movie_id " +
+                        "WHERE w.username = ? " +
+                        "GROUP BY hg.genre_id " +
+                        "ORDER BY COUNT(*) DESC " +
+                        "LIMIT 1" +
+                    "), " +
+                    "avg_rating_in_genre AS (" +
+                        "SELECT AVG(m.online_rating) AS avg_rating " +
+                        "FROM movie m " +
+                        "JOIN has_genre hg ON m.movie_id = hg.movie_id " +
+                        "JOIN watches w ON m.movie_id = w.movie_id " +
+                        "WHERE w.username = ? AND hg.genre_id = (SELECT genre_id FROM most_watched_genre)" +
+                    "), " +
+                    "most_watched_actor AS (" +
+                        "SELECT c.member_id " +
+                        "FROM casts c " +
+                        "JOIN watches w ON c.movie_id = w.movie_id " +
+                        "WHERE w.username = ? " +
+                        "GROUP BY c.member_id " +
+                        "ORDER BY COUNT(*) DESC " +
+                        "LIMIT 1" +
+                    ")" +
+                    "SELECT DISTINCT m.title AS title, m.length AS length, m.online_rating AS rating, r.release_date AS release_date " +
+                    "FROM movie m " +
+                    "JOIN released_on r ON m.movie_id = r.movie_id " +
+                    "JOIN has_genre hg ON m.movie_id = hg.movie_id " +
+                    "JOIN casts c ON m.movie_id = c.movie_id " +
+                    "WHERE hg.genre_id = (SELECT genre FROM most_watched_genre) " +
+                    "AND m.online_rating > (SELECT avg_rating FROM avg_rating_in_genre) " +
+                    "AND c.member_id = (SELECT member_id FROM most_watched_actor) " +
+                    "AND m.movie_id NOT IN (" +
+                    "    SELECT movie_id FROM watches WHERE username = ? " +
+                    ") " + 
+                    "ORDER BY m.online_rating DESC, r.release_date DESC " +
+                    "LIMIT 10";
+
+        String sql2 = "WITH most_watched_genre AS (" + 
+                        "SELECT hg.genre_id AS genre " +
+                        "FROM has_genre hg " +
+                        "JOIN watches w ON hg.movie_id = w.movie_id " +
+                        "WHERE w.username = ? " +
+                        "GROUP BY hg.genre_id " +
+                        "ORDER BY COUNT(*) DESC " +
+                        "LIMIT 1" +
+                    "), " +
+                    "avg_rating_in_genre AS (" +
+                        "SELECT AVG(m.online_rating) AS avg_rating " +
+                        "FROM movie m " +
+                        "JOIN has_genre hg ON m.movie_id = hg.movie_id " +
+                        "JOIN watches w ON m.movie_id = w.movie_id " +
+                        "WHERE w.username = ? AND hg.genre_id = (SELECT genre_id FROM most_watched_genre)" +
+                    ") " +
+                    "SELECT DISTINCT m.title AS title, m.length AS length, m.online_rating AS rating, r.release_date AS release_date " +
+                    "FROM movie m " +
+                    "JOIN released_on r ON m.movie_id = r.movie_id " +
+                    "JOIN has_genre hg ON m.movie_id = hg.movie_id " +
+                    "WHERE hg.genre_id = (SELECT genre FROM most_watched_genre) " +
+                    "AND m.online_rating > (SELECT avg_rating FROM avg_rating_in_genre) " +
+                    "AND m.movie_id NOT IN (" +
+                    "    SELECT movie_id FROM watches WHERE username = ? " +
+                    ") " + 
+                    "ORDER BY m.online_rating DESC, r.release_date DESC " +
+                    "LIMIT ?";
+
+        int limitCount = 0;
+        
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, username);
-            pstmt.setString(2, username);
-            pstmt.setString(3, username);
+            // Set the username in all required places
+            pstmt.setString(1, username); // for most_watched_genre
+            pstmt.setString(2, username); // for avg_rating_in_genre
+            pstmt.setString(3, username); // for most_watched_actor
+            pstmt.setString(4, username); // for NOT IN watched
+    
             try (ResultSet rs = pstmt.executeQuery()) {
                 System.out.printf("%-40s %-15s %-15s %-15s%n", "title", "length", "rating", "release_date");
                 printLineTables();
-                int count = 1;
                 while (rs.next()) {
-                    System.out.printf(count++ + ". %-39s %-15s %-15s %-15s%n", rs.getString("title"), rs.getTime("length"), rs.getDouble("rating"), rs.getDate("release_date"));
+                    limitCount++;
+                    System.out.printf("%-39s %-15s %-15s %-15s%n",
+                        rs.getString("title"),
+                        rs.getTime("length"), 
+                        rs.getDouble("rating"),
+                        rs.getDate("release_date")
+                    );
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        
+        try (PreparedStatement pstmt = conn.prepareStatement(sql2)) {
+            // Set the username in all required places
+            pstmt.setString(1, username); // for most_watched_genre
+            pstmt.setString(2, username); // for avg_rating_in_genre
+            pstmt.setString(3, username); // for NOT IN watched
+            pstmt.setInt(4, 10 - limitCount); // for LIMIT
+    
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    System.out.printf("%-39s %-15s %-15s %-15s%n",
+                        rs.getString("title"),
+                        rs.getTime("length"), 
+                        rs.getDouble("rating"),
+                        rs.getDate("release_date")
+                    );
                 }
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
-
+    
+    // Recommends movies based on users with similar interestes as the user, where the movies don't have to be
+    // of the same genre as the user's top genre
     public static void displayRecommendationBasedOnOthers() {
-        String sql = "WITH similar_users AS ( " +
-                        "SELECT DISTINCT w2.username " +
-                        "FROM watches w1 " +
-                        "JOIN watches w2 ON w1.movie_id = w2.movie_id " +
-                        "WHERE w1.username = ? " +
-                        "AND w2.username <> ? " + //excludes the original user
-                     "), " +
-
-                     "recommended_movies AS ( " +
-                        "SELECT m.title, m.length, m.online_rating, r.release_date, COUNT(*) AS popularity " +
+        String sql = "WITH user_top_genre AS (" +
+                        "SELECT hg.genre_id AS genre " +
+                        "FROM has_genre hg " +
+                        "JOIN watches w ON hg.movie_id = w.movie_id " +
+                        "WHERE w.username = ? " +
+                        "GROUP BY hg.genre_id " +
+                        "ORDER BY COUNT(*) DESC " +
+                        "LIMIT 1" +
+                    "), " +
+                    "all_users_top_genre AS (" +
+                        "SELECT w.username, hg.genre_id, COUNT(*) AS watch_count, " +
+                        "RANK() OVER (PARTITION BY w.username ORDER BY COUNT(*) DESC) AS genre_rank " +
+                        "FROM watches w " +
+                        "JOIN has_genre hg ON w.movie_id = hg.movie_id " +
+                        "GROUP BY w.username, hg.genre_id" +
+                    "), " +
+                    "similar_users AS (" +
+                        "SELECT username " +
+                        "FROM all_users_top_genre " +
+                        "WHERE genre_rank = 1 " +
+                        "AND genre_id = (SELECT genre FROM user_top_genre) " +
+                        "AND NOT username = ?" +
+                    "), " +
+                    "recommended_movies AS (" +
+                        "SELECT DISTINCT m.movie_id, m.title AS title, m.length AS length, m.online_rating AS rating, r.release_date AS release_date " +
                         "FROM watches w " +
                         "JOIN movie m ON w.movie_id = m.movie_id " +
                         "JOIN released_on r ON m.movie_id = r.movie_id " +
                         "WHERE w.username IN (SELECT username FROM similar_users) " +
-                        "AND m.movie_id NOT IN (SELECT movie_id FROM watches WHERE username = ?) " +
-                        "GROUP BY m.movie_id, m.title, m.length, m.online_rating, r.release_date " +
-                     ") " +
+                        "AND m.movie_id NOT IN (" +
+                            "SELECT movie_id FROM watches WHERE username = ?" +
+                        ")" +
+                    ") " +
+                    "SELECT * FROM recommended_movies " +
+                    "ORDER BY rating DESC " +
+                    "LIMIT 10";
 
-                     "SELECT title, length, online_rating AS rating, release_date " +
-                     "FROM recommended_movies " +
-                     "ORDER BY popularity DESC, online_rating DESC, release_date DESC " +
-                     "LIMIT 10; ";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, username);
-            pstmt.setString(2, username);
-            pstmt.setString(3, username);
+            pstmt.setString(1, username);  // for user_top_genre
+            pstmt.setString(2, username);  // for filtering similar_users (exclude self)
+            pstmt.setString(3, username);  // for excluding already watched movies
+
             try (ResultSet rs = pstmt.executeQuery()) {
                 System.out.printf("%-40s %-15s %-15s %-15s%n", "title", "length", "rating", "release_date");
                 printLineTables();
-                int count = 1;
                 while (rs.next()) {
-                    System.out.printf(count++ + ". %-39s %-15s %-15s %-15s%n", rs.getString("title"), rs.getTime("length"), rs.getDouble("rating"), rs.getDate("release_date"));
+                    System.out.printf("%-39s %-15s %-15.1f %-15s%n",
+                        rs.getString("title"),
+                        rs.getTime("length"),
+                        rs.getDouble("rating"),
+                        rs.getDate("release_date"));
                 }
             }
         } catch (SQLException e) {
